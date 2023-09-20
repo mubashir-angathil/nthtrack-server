@@ -1,31 +1,10 @@
-const mysql = require('mysql2')
-const {
-    DATABASE,
-    DATABASE_PASSWORD,
-    DATABASE_USER_NAME,
-    HOST
-} = require("../configs")
 
-// Create new database connection
-const connection = mysql.createConnection({
-    host: HOST,
-    user: DATABASE_USER_NAME,
-    password: DATABASE_PASSWORD,
-    // database: DATABASE
-})
-
-// Connect
-const connect = () => {
-    return connection.connect((err) => {
-        if (err) {
-            console.error('Error connecting to MySQL:', err);
-            return;
-        }
-        console.log('✅ Connected to MySQL database !!');
-    });
+const database = require("../../models/sequelize.modals")
+const configs = require("../configs")
+// Initialize database connection
+const syncDatabase = async () => {
+    return database.sequelize.sync()
+        .then(() => console.log(`✅ Database synced successfully (${configs.DATABASE})`))
+        .catch(err => console.error('Error syncing database:', err))
 }
-
-module.exports = {
-    connection,
-    connect
-}
+module.exports = syncDatabase
