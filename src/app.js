@@ -5,15 +5,10 @@ const authRoute = require("./routes/auth.routes")
 // Assign express
 const app = express();
 
-
-// app.use(express.json());
-// app.use(
-//   express.urlencoded({
-//     extended: true,
-//   })
-// );
-
+// Enables cors 
 app.use(cors({}))
+
+// Route initialization
 app.use('/auth', authRoute)
 
 module.exports = app;

@@ -14,11 +14,11 @@ const {
 } = require('../configs/configs');
 
 const sequelize = new Sequelize({
-  dialect: DIALECT,
   host: HOST,
+  dialect: DIALECT,
+  database: DATABASE,
   username: DATABASE_USER_NAME,
   password: DATABASE_PASSWORD,
-  // database: DATABASE
 });
 
 fs
