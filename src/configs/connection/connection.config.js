@@ -1,4 +1,4 @@
-const database = require("../../models/sequelize.models");
+const database = require("../../models/sequelize.model");
 const configs = require("../configs");
 
 // Initialize database connection

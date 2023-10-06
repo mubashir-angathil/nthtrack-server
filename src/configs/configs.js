@@ -12,6 +12,8 @@ const {
   DATABASE_PASSWORD,
   HOST,
   DIALECT,
+  ACCESS_TOKEN_SECRET,
+  REFRESH_TOKEN_SECRET,
 } = process.env;
 
 module.exports = {
@@ -22,6 +24,8 @@ module.exports = {
   DATABASE,
   DATABASE_USER_NAME,
   DATABASE_PASSWORD,
+  ACCESS_TOKEN_SECRET,
+  REFRESH_TOKEN_SECRET,
 };
 
 // {
