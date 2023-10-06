@@ -15,7 +15,6 @@ module.exports = {
     jwt.sign({ id, username }, ACCESS_TOKEN_SECRET, {
       expiresIn: "300s",
     }),
-
   /**
    * Generates a refresh token using the provided user information.
    * @param {object} user - The user object containing 'id' and 'username'.
@@ -26,7 +25,6 @@ module.exports = {
     jwt.sign({ id, username }, REFRESH_TOKEN_SECRET, {
       expiresIn: "7d",
     }),
-
   /**
    * Authenticates a JWT token using the provided token and secret.
    * @param {object} params - Object containing 'token' and 'secret'.
