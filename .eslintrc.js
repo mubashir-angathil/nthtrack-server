@@ -16,7 +16,7 @@ module.exports = {
     "linebreak-style": ["error", "unix"], // Enforces Unix line endings
     quotes: ["error", "double"], // Enforces the use of double quotes,
     "comma-dangle": ["error", "always-multiline"],
-    "semi-style": ["error", "last"],
+    semi: "off",
     "prettier/prettier": "error", // Prettier Rules for Code Style
   },
-}
+};

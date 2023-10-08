@@ -5,6 +5,6 @@ const route = express.Router();
 const projectController = require("../controllers/project.controller");
 const verifyToken = require("../middlewares/verifyToken.middleware");
 
-route.get("/all", verifyToken, projectController.getProjects);
+route.post("/create-project", verifyToken, projectController.createProject);
 
 module.exports = route;

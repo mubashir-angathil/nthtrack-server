@@ -5,7 +5,6 @@ const {
   authenticateJwtToken,
 } = require("../utils/helpers/jwt.helper");
 const { REFRESH_TOKEN_SECRET } = require("../configs/configs");
-const { errorResponse } = require("../utils/helpers/helpers");
 
 module.exports = {
   /**
