@@ -1,4 +1,4 @@
-const { Project } = require("../models/sequelize.model");
+const { Project, Issue } = require("../models/sequelize.model");
 const { formattedError } = require("../utils/helpers/helpers");
 
 module.exports = {
@@ -41,6 +41,15 @@ module.exports = {
       return projects;
     } catch (error) {
       // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
+  createIssue: async (newIssue) => {
+    try {
+      const newProject = await Issue.create(newIssue);
+      return newProject;
+    } catch (error) {
+      // If an error occurs during project creation, format and rethrow the error
       throw formattedError(error);
     }
   },

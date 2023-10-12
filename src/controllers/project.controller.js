@@ -57,4 +57,29 @@ module.exports = {
       res.status(400).json(error);
     }
   },
+
+  createIssue: async (req, res) => {
+    const { projectId } = req.params;
+    const { trackerId, statusId, description } = req.body;
+
+    const newIssue = {
+      description,
+      tracker_id: trackerId,
+      status_id: statusId,
+      project_id: projectId,
+    };
+    try {
+      const issue = await projectService.createIssue(newIssue);
+
+      // Check if issue creation was not successful
+      if (issue === null) {
+        return res.status(400).json(issue);
+      }
+
+      return res.json(issue);
+    } catch (error) {
+      // Handle errors by sending a 400 status with the error details
+      res.status(400).json(error);
+    }
+  },
 };

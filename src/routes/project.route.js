@@ -8,7 +8,7 @@ const verifyToken = require("../middlewares/verifyToken.middleware");
 /**
  * Express route for creating a new project.
  * Requires a valid authentication token.
- * @name POST /api/projects/create-project
+ * @name POST /api/project/create-project
  * @function
  * @memberof module:routes
  * @inner
@@ -21,7 +21,7 @@ route.post("/create-project", verifyToken, projectController.createProject);
 /**
  * Express route for retrieving all projects.
  * Requires a valid authentication token.
- * @name GET /api/projects/all
+ * @name GET /api/project/all
  * @function
  * @memberof module:routes
  * @inner
@@ -30,5 +30,11 @@ route.post("/create-project", verifyToken, projectController.createProject);
  * @param {Function} controller - Controller function to handle the request.
  */
 route.get("/all", verifyToken, projectController.getAllProjects);
+
+route.post(
+  "/:projectId/issue/create",
+  verifyToken,
+  projectController.createIssue,
+);
 
 module.exports = route;
