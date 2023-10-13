@@ -68,4 +68,13 @@ module.exports = {
       throw formattedError(error);
     }
   },
+  getIssueById: async ({ issueId }) => {
+    try {
+      const issues = await Issue.findByPk(issueId);
+      return issues;
+    } catch (error) {
+      // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
 };
