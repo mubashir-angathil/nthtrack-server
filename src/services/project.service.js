@@ -15,12 +15,21 @@ module.exports = {
       throw formattedError(error);
     }
   },
-  getAllProjects: async ({ offset, limit }) => {
+  getAllProjects: async ({ offset, limit, projectName }) => {
     try {
+      const whereClause = {};
+
+      if (projectName) {
+        whereClause.project_name = {
+          [Op.like]: `%${projectName}%`,
+        };
+      }
+
       const projects = await Project.findAll({
         offset,
         limit,
         paranoid: false,
+        where: whereClause,
       });
       return projects;
     } catch (error) {

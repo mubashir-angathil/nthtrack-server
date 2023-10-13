@@ -40,12 +40,12 @@ module.exports = {
    */
   getAllProjects: async (req, res) => {
     try {
-      const { page, limit } = req.query;
+      const { page, limit, projectName } = req.query;
       const currentPagination = getCurrentPagination({ page, limit });
-
       const projects = await projectService.getAllProjects({
         offset: currentPagination.offset,
         limit: currentPagination.limit,
+        projectName,
       });
 
       if (!projects) {
