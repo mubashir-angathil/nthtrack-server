@@ -20,7 +20,7 @@ module.exports = {
       });
 
       // Check if project creation was successful
-      if (project === null) return res.status(400);
+      if (project === null) return res.status(400).json(project);
 
       return res.json(project);
     } catch (error) {
@@ -49,7 +49,7 @@ module.exports = {
       });
 
       // Check if project retrieval was successful
-      if (project === null) return res.status(400);
+      if (project === null) return res.status(400).json(project);
 
       return res.json(project);
     } catch (error) {
@@ -96,7 +96,7 @@ module.exports = {
         projectId,
       });
 
-      if (issues === null) return res.status(400);
+      if (issues === null) return res.res.status(400).json(issues);
 
       return res.json(issues);
     } catch (error) {
@@ -110,9 +110,23 @@ module.exports = {
 
       const issue = await projectService.getIssueById({ issueId });
 
-      if (issue === null) return res.status(400);
+      if (issue === null) return res.status(400).json(issue);
 
       return res.json(issue);
+    } catch (error) {
+      // Handle errors by sending a 400 status with the error details
+      res.status(400).json(error);
+    }
+  },
+  getProjectById: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+
+      const project = await projectService.getProjectById({ projectId });
+
+      if (project === null) return res.status(400).json(project);
+
+      return res.json(project);
     } catch (error) {
       // Handle errors by sending a 400 status with the error details
       res.status(400).json(error);

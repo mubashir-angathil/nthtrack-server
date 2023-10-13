@@ -30,6 +30,7 @@ route.post("/create-project", verifyToken, projectController.createProject);
  * @param {Function} controller - Controller function to handle the request.
  */
 route.get("/all", verifyToken, projectController.getAllProjects);
+route.get("/:projectId", verifyToken, projectController.getProjectById);
 
 route.post(
   "/:projectId/issue/create",

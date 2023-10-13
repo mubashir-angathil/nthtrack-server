@@ -77,4 +77,13 @@ module.exports = {
       throw formattedError(error);
     }
   },
+  getProjectById: async ({ projectId }) => {
+    try {
+      const project = await Project.findByPk(projectId);
+      return project;
+    } catch (error) {
+      // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
 };
