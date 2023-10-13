@@ -1,55 +1,49 @@
 const { Project, Issue } = require("../models/sequelize.model");
 const { formattedError } = require("../utils/helpers/helpers");
+const { Op } = require("sequelize");
 
 module.exports = {
-  /**
-   * Creates a new project in the database.
-   * @param {Object} projectDetails - Details of the project.
-   * @param {string} projectDetails.projectName - The name of the project.
-   * @param {string} projectDetails.description - The description of the project.
-   * @param {string} projectDetails.status - The status of the project.
-   * @returns {Promise<Object>} - A promise that resolves to the created project.
-   * @throws {Error} - Throws an error if the creation fails.
-   */
-  createProject: async ({ projectName, description, status }) => {
+  createProject: async ({ projectName, description, statusId }) => {
     try {
       const newProject = await Project.create({
         project_name: projectName,
+        status_id: statusId,
         description,
-        status,
       });
       return newProject;
     } catch (error) {
-      // If an error occurs during project creation, format and rethrow the error
       throw formattedError(error);
     }
   },
-  /**
-   * Retrieves all projects from the database with pagination options.
-   * @param {Object} paginationOptions - Options for pagination.
-   * @param {number} paginationOptions.offset - The offset for pagination.
-   * @param {number} paginationOptions.limit - The limit for the number of projects to retrieve.
-   * @returns {Promise<Array<Object>>} - A promise that resolves to an array of projects.
-   * @throws {Error} - Throws an error if the retrieval fails.
-   */
   getAllProjects: async ({ offset, limit }) => {
     try {
       const projects = await Project.findAll({
         offset,
         limit,
+        paranoid: false,
       });
       return projects;
     } catch (error) {
-      // If an error occurs during project retrieval, format and rethrow the error
       throw formattedError(error);
     }
   },
   getProjectById: async ({ projectId }) => {
     try {
-      const project = await Project.findByPk(projectId);
+      const project = await Project.findByPk(projectId, { paranoid: false });
       return project;
     } catch (error) {
-      // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
+  closeProjectById: async ({ projectId }) => {
+    try {
+      const project = await Project.destroy({
+        where: {
+          id: projectId,
+        },
+      });
+      return project;
+    } catch (error) {
       throw formattedError(error);
     }
   },
@@ -58,7 +52,6 @@ module.exports = {
       const newProject = await Issue.create(newIssue);
       return newProject;
     } catch (error) {
-      // If an error occurs during project creation, format and rethrow the error
       throw formattedError(error);
     }
   },
@@ -74,16 +67,14 @@ module.exports = {
       });
       return issues;
     } catch (error) {
-      // If an error occurs during project retrieval, format and rethrow the error
       throw formattedError(error);
     }
   },
   getIssueById: async ({ issueId }) => {
     try {
-      const issues = await Issue.findByPk(issueId);
+      const issues = await Issue.findByPk(issueId, { paranoid: false });
       return issues;
     } catch (error) {
-      // If an error occurs during project retrieval, format and rethrow the error
       throw formattedError(error);
     }
   },
@@ -96,7 +87,21 @@ module.exports = {
       });
       return issue;
     } catch (error) {
-      // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
+  getOpenIssuesCountByProjectId: async ({ projectId }) => {
+    try {
+      const issuesCount = await Issue.count({
+        where: {
+          project_Id: projectId,
+          closedAt: {
+            [Op.eq]: null,
+          },
+        },
+      });
+      return issuesCount;
+    } catch (error) {
       throw formattedError(error);
     }
   },

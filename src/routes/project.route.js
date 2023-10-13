@@ -31,6 +31,7 @@ route.post("/create-project", verifyToken, projectController.createProject);
  */
 route.get("/all", verifyToken, projectController.getAllProjects);
 route.get("/:projectId", verifyToken, projectController.getProjectById);
+route.patch("/close", verifyToken, projectController.closeProjectById);
 
 route.post(
   "/:projectId/issue/create",
@@ -40,6 +41,6 @@ route.post(
 
 route.get("/:projectId/issue/all", verifyToken, projectController.getAllIssues);
 route.get("/issue/:issueId", verifyToken, projectController.getIssueById);
-route.patch("/issue", verifyToken, projectController.closeIssueById);
+route.patch("/issue/close", verifyToken, projectController.closeIssueById);
 
 module.exports = route;

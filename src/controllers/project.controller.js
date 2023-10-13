@@ -9,13 +9,13 @@ module.exports = {
    * @returns {Promise<void>} - A promise representing the completion of the operation.
    */
   createProject: async (req, res) => {
-    const { projectName, description, status } = req.body;
+    const { projectName, description, statusId } = req.body;
 
     try {
       const project = await projectService.createProject({
         projectName,
         description,
-        status,
+        statusId,
       });
 
       if (!project) {
@@ -84,6 +84,47 @@ module.exports = {
       res
         .status(400)
         .json({ success: false, message: "Error retrieving project.", error });
+    }
+  },
+  /**
+   * Controller method for closing a project by ID.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - A promise representing the completion of the operation.
+   */
+  closeProjectById: async (req, res) => {
+    try {
+      const { projectId } = req.body;
+
+      const openIssuesCount =
+        await projectService.getOpenIssuesCountByProjectId({
+          projectId,
+        });
+
+      if (openIssuesCount !== 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot close project with open issues.",
+        });
+      }
+
+      const project = await projectService.closeProjectById({ projectId });
+
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          message: "Project not found or already closed.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Project closed successfully.",
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error.", error });
     }
   },
 

@@ -49,15 +49,15 @@ module.exports = (sequelize, DataTypes) => {
   Issue.associate = (models) => {
     Issue.belongsTo(models.Project, {
       foreignKey: "project_id",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     });
     Issue.belongsTo(models.Status, {
       foreignKey: "status_id",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     });
     Issue.belongsTo(models.Tracker, {
       foreignKey: "tracker_id",
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     });
   };
 
