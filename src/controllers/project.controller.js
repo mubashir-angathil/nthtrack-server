@@ -9,7 +9,6 @@ module.exports = {
    * @returns {Promise<void>} - A promise representing the completion of the operation.
    */
   createProject: async (req, res) => {
-    // Extract pagination parameters from the query string
     const { projectName, description, status } = req.body;
 
     try {
@@ -19,15 +18,20 @@ module.exports = {
         status,
       });
 
-      // Check if project creation was successful
-      if (project === null) return res.status(400).json(project);
+      if (!project) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Failed to create project." });
+      }
 
-      return res.json(project);
+      return res.json({ success: true, data: project });
     } catch (error) {
-      // Handle errors by sending a 400 status with the error details
-      res.status(400).json(error);
+      res
+        .status(400)
+        .json({ success: false, message: "Error creating project.", error });
     }
   },
+
   /**
    * Controller method for retrieving all projects with pagination.
    * @param {Object} req - Express request object.
@@ -36,28 +40,59 @@ module.exports = {
    */
   getAllProjects: async (req, res) => {
     try {
-      // Extract pagination parameters from the query string
       const { page, limit } = req.query;
-
-      // Calculate pagination options using the utility function
       const currentPagination = getCurrentPagination({ page, limit });
 
-      // Retrieve projects with pagination options
-      const project = await projectService.getAllProjects({
+      const projects = await projectService.getAllProjects({
         offset: currentPagination.offset,
         limit: currentPagination.limit,
       });
 
-      // Check if project retrieval was successful
-      if (project === null) return res.status(400).json(project);
+      if (!projects) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Failed to retrieve projects." });
+      }
 
-      return res.json(project);
+      return res.json({ success: true, data: projects });
     } catch (error) {
-      // Handle errors by sending a 400 status with the error details
-      res.status(400).json(error);
+      res
+        .status(400)
+        .json({ success: false, message: "Error retrieving projects.", error });
     }
   },
 
+  /**
+   * Controller method for retrieving a project by ID.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - A promise representing the completion of the operation.
+   */
+  getProjectById: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const project = await projectService.getProjectById({ projectId });
+
+      if (!project) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Project not found." });
+      }
+
+      return res.json({ success: true, data: project });
+    } catch (error) {
+      res
+        .status(400)
+        .json({ success: false, message: "Error retrieving project.", error });
+    }
+  },
+
+  /**
+   * Controller method for creating an issue within a project.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - A promise representing the completion of the operation.
+   */
   createIssue: async (req, res) => {
     const { projectId } = req.params;
     const { trackerId, statusId, description } = req.body;
@@ -68,68 +103,107 @@ module.exports = {
       status_id: statusId,
       project_id: projectId,
     };
+
     try {
       const issue = await projectService.createIssue(newIssue);
 
-      // Check if issue creation was not successful
-      if (issue === null) {
-        return res.status(400).json(issue);
+      if (!issue) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Failed to create issue." });
       }
 
-      return res.json(issue);
+      return res.json({ success: true, data: issue });
     } catch (error) {
-      // Handle errors by sending a 400 status with the error details
-      res.status(400).json(error);
+      res
+        .status(400)
+        .json({ success: false, message: "Error creating issue.", error });
     }
   },
+
+  /**
+   * Controller method for retrieving all issues within a project with pagination.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - A promise representing the completion of the operation.
+   */
   getAllIssues: async (req, res) => {
     try {
-      // Extract pagination parameters from the query string
       const { page, limit } = req.query;
       const { projectId } = req.params;
 
       const currentPagination = getCurrentPagination({ page, limit });
-
       const issues = await projectService.getAllIssues({
         offset: currentPagination.offset,
         limit: currentPagination.limit,
         projectId,
       });
 
-      if (issues === null) return res.res.status(400).json(issues);
+      if (!issues) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Failed to retrieve issues." });
+      }
 
-      return res.json(issues);
+      return res.json({ success: true, data: issues });
     } catch (error) {
-      // Handle errors by sending a 400 status with the error details
-      res.status(400).json(error);
+      res
+        .status(400)
+        .json({ success: false, message: "Error retrieving issues.", error });
     }
   },
+
+  /**
+   * Controller method for retrieving an issue by ID.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - A promise representing the completion of the operation.
+   */
   getIssueById: async (req, res) => {
     try {
       const { issueId } = req.params;
-
       const issue = await projectService.getIssueById({ issueId });
 
-      if (issue === null) return res.status(400).json(issue);
+      if (!issue) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Issue not found." });
+      }
 
-      return res.json(issue);
+      return res.json({ success: true, data: issue });
     } catch (error) {
-      // Handle errors by sending a 400 status with the error details
-      res.status(400).json(error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error.", error });
     }
   },
-  getProjectById: async (req, res) => {
+
+  /**
+   * Controller method for closing an issue by ID.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - A promise representing the completion of the operation.
+   */
+  closeIssueById: async (req, res) => {
     try {
-      const { projectId } = req.params;
+      const { issueId } = req.body;
+      const issue = await projectService.closeIssueById({ issueId });
 
-      const project = await projectService.getProjectById({ projectId });
+      if (issue) {
+        return res.json({
+          success: true,
+          message: "Issue closed successfully.",
+        });
+      }
 
-      if (project === null) return res.status(400).json(project);
-
-      return res.json(project);
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found or already closed.",
+      });
     } catch (error) {
-      // Handle errors by sending a 400 status with the error details
-      res.status(400).json(error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error.", error });
     }
   },
 };

@@ -44,6 +44,15 @@ module.exports = {
       throw formattedError(error);
     }
   },
+  getProjectById: async ({ projectId }) => {
+    try {
+      const project = await Project.findByPk(projectId);
+      return project;
+    } catch (error) {
+      // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
   createIssue: async (newIssue) => {
     try {
       const newProject = await Issue.create(newIssue);
@@ -61,6 +70,7 @@ module.exports = {
         },
         offset,
         limit,
+        paranoid: false,
       });
       return issues;
     } catch (error) {
@@ -77,10 +87,14 @@ module.exports = {
       throw formattedError(error);
     }
   },
-  getProjectById: async ({ projectId }) => {
+  closeIssueById: async ({ issueId }) => {
     try {
-      const project = await Project.findByPk(projectId);
-      return project;
+      const issue = await Issue.destroy({
+        where: {
+          id: issueId,
+        },
+      });
+      return issue;
     } catch (error) {
       // If an error occurs during project retrieval, format and rethrow the error
       throw formattedError(error);
