@@ -82,4 +82,29 @@ module.exports = {
       res.status(400).json(error);
     }
   },
+  getAllIssues: async (req, res) => {
+    try {
+      // Extract pagination parameters from the query string
+      const { page, limit } = req.query;
+      const { projectId } = req.params;
+
+      // Calculate pagination options using the utility function
+      const currentPagination = getCurrentPagination({ page, limit });
+
+      // Retrieve projects with pagination options
+      const issues = await projectService.getAllIssues({
+        offset: currentPagination.offset,
+        limit: currentPagination.limit,
+        projectId,
+      });
+
+      // Check if project retrieval was successful
+      if (issues === null) return res.status(400);
+
+      return res.json(issues);
+    } catch (error) {
+      // Handle errors by sending a 400 status with the error details
+      res.status(400).json(error);
+    }
+  },
 };

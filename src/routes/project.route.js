@@ -37,4 +37,6 @@ route.post(
   projectController.createIssue,
 );
 
+route.get("/:projectId/issue/all", verifyToken, projectController.getAllIssues);
+
 module.exports = route;

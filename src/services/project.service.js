@@ -53,4 +53,19 @@ module.exports = {
       throw formattedError(error);
     }
   },
+  getAllIssues: async ({ offset, limit, projectId }) => {
+    try {
+      const issues = await Issue.findAll({
+        where: {
+          project_id: projectId,
+        },
+        offset,
+        limit,
+      });
+      return issues;
+    } catch (error) {
+      // If an error occurs during project retrieval, format and rethrow the error
+      throw formattedError(error);
+    }
+  },
 };
