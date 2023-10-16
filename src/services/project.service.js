@@ -15,6 +15,25 @@ module.exports = {
       throw formattedError(error);
     }
   },
+  updateProject: async ({ projectName, description, statusId, projectId }) => {
+    try {
+      const [updatedProject] = await Project.update(
+        {
+          project_name: projectName,
+          status_id: statusId,
+          description,
+        },
+        {
+          where: {
+            id: projectId,
+          },
+        },
+      );
+      return updatedProject;
+    } catch (error) {
+      throw formattedError(error);
+    }
+  },
   getAllProjects: async ({ offset, limit, projectName }) => {
     try {
       const whereClause = {};

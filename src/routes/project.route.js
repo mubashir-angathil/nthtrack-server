@@ -17,6 +17,7 @@ const verifyToken = require("../middlewares/verifyToken.middleware");
  * @param {Function} controller - Controller function to handle the request.
  */
 route.post("/create-project", verifyToken, projectController.createProject);
+route.patch("/update-project", verifyToken, projectController.updateProject);
 
 /**
  * Express route for retrieving all projects.

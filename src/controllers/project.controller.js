@@ -31,7 +31,35 @@ module.exports = {
         .json({ success: false, message: "Error creating project.", error });
     }
   },
+  updateProject: async (req, res) => {
+    const { projectName, description, statusId, projectId } = req.body;
 
+    try {
+      const updatedProject = await projectService.updateProject({
+        projectId,
+        projectName,
+        description,
+        statusId,
+      });
+
+      if (!updatedProject) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Failed to update the project." });
+      }
+
+      return res.json({
+        success: true,
+        data: [{ updated: Boolean(updatedProject) }],
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: "Error updating the project.",
+        error,
+      });
+    }
+  },
   /**
    * Controller method for retrieving all projects with pagination.
    * @param {Object} req - Express request object.
@@ -108,9 +136,14 @@ module.exports = {
         });
       }
 
-      const project = await projectService.closeProjectById({ projectId });
+      const updatedProject = await projectService.updateProject({
+        projectId,
+        statusId: 2,
+      }); // as per statuses table id of closed is 2
 
-      if (!project) {
+      const closeProject = await projectService.closeProjectById({ projectId });
+
+      if (!updatedProject || !closeProject) {
         return res.status(404).json({
           success: false,
           message: "Project not found or already closed.",
