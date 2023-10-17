@@ -1,17 +1,5 @@
 module.exports = {
   /**
-   * Generates a formatted error response object.
-   * @param {string} type - The type of error.
-   * @param {string} message - The error message.
-   * @param {any} value - The relevant value associated with the error.
-   * @returns {object} - The formatted error response object.
-   */
-  errorResponse: (props) => {
-    const formattedError = Object.create(props);
-    return formattedError;
-  },
-
-  /**
    * A function to format a Sequelize SQL error for consistent error handling.
    * @param {Error} error - The original error object.
    * @returns {Object} - A formatted error object containing name, message, and SQL error details.
@@ -21,7 +9,7 @@ module.exports = {
     return {
       name: error?.name, // Extract the error name (e.g., SequelizeDatabaseError)
       message: error?.message, // Extract the error message
-      error: error?.sql, // Extract the SQL-related error details (if available)
+      query: error?.sql, // Extract the SQL-related error details (if available)
     };
   },
 
