@@ -10,7 +10,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: "latest",
   },
-  ignorePatterns: ["dist", ".eslintrc.cjs"],
+  ignorePatterns: ["dist", ".eslintrc.cjs", "tests"],
   rules: {
     "no-console": "warn", // Warns about the use of console statements
     "linebreak-style": ["error", "unix"], // Enforces Unix line endings
