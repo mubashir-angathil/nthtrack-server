@@ -1,10 +1,15 @@
-const app = require("./app")
-const configs = require("./configs/configs")
+const app = require("./app");
+const configs = require("./configs/configs");
+const syncDatabase = require("./configs/connection/connection.config");
 
-const PORT = configs.PORT || 4000
+// Sync database
+syncDatabase()
+  .then(() => {
+    const PORT = configs.PORT || 4000;
 
-// Listening app
-app.listen(PORT || 8000 , () => {
-    console.log(`🚀 Server started on port ${PORT} !!`)
-})
-
+    // Listening app
+    app.listen(PORT || 8000, () => {
+      console.info(`🚀 Server started on port ${PORT} !!`);
+    });
+  })
+  .catch((err) => console.error(err));
