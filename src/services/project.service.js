@@ -83,6 +83,25 @@ module.exports = {
       throw formattedError(error);
     }
   },
+  updateIssue: async ({ issueId, trackerId, description, statusId }) => {
+    try {
+      const [updatedIssue] = await Issue.update(
+        {
+          tracker_id: trackerId,
+          status_id: statusId,
+          description,
+        },
+        {
+          where: {
+            id: issueId,
+          },
+        },
+      );
+      return updatedIssue;
+    } catch (error) {
+      throw formattedError(error);
+    }
+  },
   getAllIssues: async ({ offset, limit, projectId }) => {
     try {
       const issues = await Issue.findAll({

@@ -39,6 +39,7 @@ route.post(
   verifyToken,
   projectController.createIssue,
 );
+route.patch("/update-issue", verifyToken, projectController.updateIssue);
 
 route.get("/:projectId/issue/all", verifyToken, projectController.getAllIssues);
 route.get("/issue/:issueId", verifyToken, projectController.getIssueById);

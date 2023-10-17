@@ -194,7 +194,35 @@ module.exports = {
         .json({ success: false, message: "Error creating issue.", error });
     }
   },
+  updateIssue: async (req, res) => {
+    const { trackerId, statusId, description, issueId } = req.body;
 
+    try {
+      const updatedIssue = await projectService.updateIssue({
+        issueId,
+        trackerId,
+        description,
+        statusId,
+      });
+
+      if (!updatedIssue) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Failed to update the issue." });
+      }
+
+      return res.json({
+        success: true,
+        data: [{ updated: Boolean(updatedIssue) }],
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: "Error updating the issue.",
+        error,
+      });
+    }
+  },
   /**
    * Controller method for retrieving all issues within a project with pagination.
    * @param {Object} req - Express request object.
