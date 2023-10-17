@@ -289,18 +289,23 @@ module.exports = {
   closeIssueById: async (req, res) => {
     try {
       const { issueId } = req.body;
+
+      const updateIssue = await projectService.updateIssue({
+        issueId,
+        statusId: 2,
+      }); // as per statuses table id of closed is 2
       const issue = await projectService.closeIssueById({ issueId });
 
-      if (issue) {
-        return res.json({
-          success: true,
-          message: "Issue closed successfully.",
+      if (!updateIssue || !issue) {
+        return res.status(404).json({
+          success: false,
+          message: "Issue not found or already closed.",
         });
       }
 
-      return res.status(404).json({
-        success: false,
-        message: "Issue not found or already closed.",
+      return res.json({
+        success: true,
+        message: "Issue closed successfully.",
       });
     } catch (error) {
       res
