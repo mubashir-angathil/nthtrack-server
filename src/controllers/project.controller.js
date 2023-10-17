@@ -231,14 +231,20 @@ module.exports = {
    */
   getAllIssues: async (req, res) => {
     try {
-      const { page, limit } = req.query;
+      const { page, limit, trackerId, statusId, searchKey } = req.query;
       const { projectId } = req.params;
 
-      const currentPagination = getCurrentPagination({ page, limit });
+      const currentPagination = getCurrentPagination({
+        page,
+        limit,
+      });
       const issues = await projectService.getAllIssues({
         offset: currentPagination.offset,
         limit: currentPagination.limit,
         projectId,
+        trackerId,
+        statusId,
+        searchKey,
       });
 
       if (!issues) {

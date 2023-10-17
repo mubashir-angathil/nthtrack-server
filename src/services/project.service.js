@@ -102,12 +102,32 @@ module.exports = {
       throw formattedError(error);
     }
   },
-  getAllIssues: async ({ offset, limit, projectId }) => {
+  getAllIssues: async ({
+    offset,
+    limit,
+    trackerId,
+    statusId,
+    searchKey,
+    projectId,
+  }) => {
     try {
+      const whereClause = {
+        project_id: projectId,
+      };
+      if (trackerId) {
+        whereClause.tracker_Id = trackerId;
+      }
+      if (statusId) {
+        whereClause.status_id = statusId;
+      }
+      if (searchKey) {
+        whereClause.description = {
+          [Op.like]: `%${searchKey}%`,
+        };
+      }
+
       const issues = await Issue.findAll({
-        where: {
-          project_id: projectId,
-        },
+        where: whereClause,
         offset,
         limit,
         paranoid: false,
