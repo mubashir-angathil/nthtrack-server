@@ -71,9 +71,9 @@ router.get("/:projectId", verifyToken, projectController.getProjectById);
 router.patch("/close", verifyToken, projectController.closeProjectById);
 
 /**
- * Express route for creating an issue within a project.
+ * Express route for creating an task within a project.
  * Requires a valid authentication token.
- * @name POST /api/project/:projectId/issue/create
+ * @name POST /api/project/:projectId/task/create
  * @function
  * @memberof module:routes
  * @inner
@@ -82,15 +82,15 @@ router.patch("/close", verifyToken, projectController.closeProjectById);
  * @param {Function} controller - Controller function to handle the request.
  */
 router.post(
-  "/:projectId/issue/create",
+  "/:projectId/task/create",
   verifyToken,
-  projectController.createIssue,
+  projectController.createTask,
 );
 
 /**
- * Express route for updating an issue within a project.
+ * Express route for updating an task within a project.
  * Requires a valid authentication token.
- * @name PATCH /api/project/update-issue
+ * @name PATCH /api/project/update-task
  * @function
  * @memberof module:routes
  * @inner
@@ -98,12 +98,12 @@ router.post(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch("/update-issue", verifyToken, projectController.updateIssue);
+router.patch("/update-task", verifyToken, projectController.updateTask);
 
 /**
- * Express route for retrieving all issues within a project.
+ * Express route for retrieving all tasks within a project.
  * Requires a valid authentication token.
- * @name GET /api/project/:projectId/issue/all
+ * @name GET /api/project/:projectId/task/all
  * @function
  * @memberof module:routes
  * @inner
@@ -111,16 +111,12 @@ router.patch("/update-issue", verifyToken, projectController.updateIssue);
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.get(
-  "/:projectId/issue/all",
-  verifyToken,
-  projectController.getAllIssues,
-);
+router.get("/:projectId/task/all", verifyToken, projectController.getAllTasks);
 
 /**
- * Express route for retrieving an issue by ID within a project.
+ * Express route for retrieving an task by ID within a project.
  * Requires a valid authentication token.
- * @name GET /api/project/issue/:issueId
+ * @name GET /api/project/task/:taskId
  * @function
  * @memberof module:routes
  * @inner
@@ -128,12 +124,12 @@ router.get(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.get("/issue/:issueId", verifyToken, projectController.getIssueById);
+router.get("/task/:taskId", verifyToken, projectController.getTaskById);
 
 /**
- * Express route for closing an issue by ID within a project.
+ * Express route for closing an task by ID within a project.
  * Requires a valid authentication token.
- * @name PATCH /api/project/issue/close
+ * @name PATCH /api/project/task/close
  * @function
  * @memberof module:routes
  * @inner
@@ -141,6 +137,6 @@ router.get("/issue/:issueId", verifyToken, projectController.getIssueById);
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch("/issue/close", verifyToken, projectController.closeIssueById);
+router.patch("/task/close", verifyToken, projectController.closeTaskById);
 
 module.exports = router;

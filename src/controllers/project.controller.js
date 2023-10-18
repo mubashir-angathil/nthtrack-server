@@ -2,7 +2,7 @@
 const projectService = require("../services/project.service");
 const { getCurrentPagination } = require("../utils/helpers/helpers");
 
-// Exported module containing various controllers for project and issue management
+// Exported module containing various controllers for project and task management
 module.exports = {
   // Controller for creating a new project
   createProject: async (req, res) => {
@@ -133,17 +133,16 @@ module.exports = {
       // Extract project ID from request body
       const { projectId } = req.body;
 
-      // Check the count of open issues related to the project
-      const openIssuesCount =
-        await projectService.getOpenIssuesCountByProjectId({
-          projectId,
-        });
+      // Check the count of open tasks related to the project
+      const openTasksCount = await projectService.getOpenTasksCountByProjectId({
+        projectId,
+      });
 
-      // If there are open issues, prevent closing the project
-      if (openIssuesCount !== 0) {
+      // If there are open tasks, prevent closing the project
+      if (openTasksCount !== 0) {
         return res.status(400).json({
           success: false,
-          message: "Cannot close the project with open issues.",
+          message: "Cannot close the project with open tasks.",
         });
       }
 
@@ -177,13 +176,13 @@ module.exports = {
     }
   },
 
-  // Controller for creating an issue within a project
-  createIssue: async (req, res) => {
+  // Controller for creating an task within a project
+  createTask: async (req, res) => {
     const { projectId } = req.params;
     const { trackerId, statusId, description } = req.body;
 
-    // Prepare the new issue object
-    const newIssue = {
+    // Prepare the new task object
+    const newTask = {
       description,
       tracker_id: trackerId,
       status_id: statusId,
@@ -191,61 +190,61 @@ module.exports = {
     };
 
     try {
-      // Call the project service to create a new issue
-      const issue = await projectService.createIssue(newIssue);
+      // Call the project service to create a new task
+      const task = await projectService.createTask(newTask);
 
-      // Check if the issue creation was successful
-      if (!issue) {
+      // Check if the task creation was successful
+      if (!task) {
         return res
           .status(400)
-          .json({ success: false, message: "Failed to create an issue." });
+          .json({ success: false, message: "Failed to create an task." });
       }
 
-      // Respond with success and the created issue data
-      return res.json({ success: true, data: issue });
+      // Respond with success and the created task data
+      return res.json({ success: true, data: task });
     } catch (error) {
-      // Handle errors during issue creation
+      // Handle errors during task creation
       res
         .status(400)
-        .json({ success: false, message: "Error creating an issue.", error });
+        .json({ success: false, message: "Error creating an task.", error });
     }
   },
 
-  // Controller for updating an issue within a project
-  updateIssue: async (req, res) => {
-    const { trackerId, statusId, description, issueId } = req.body;
+  // Controller for updating an task within a project
+  updateTask: async (req, res) => {
+    const { trackerId, statusId, description, taskId } = req.body;
 
     try {
-      // Call the project service to update an existing issue
-      const updatedIssue = await projectService.updateIssue({
-        issueId,
+      // Call the project service to update an existing task
+      const updatedTask = await projectService.updateTask({
+        taskId,
         trackerId,
         description,
         statusId,
       });
 
-      // Check if the issue update was successful
-      if (!updatedIssue) {
+      // Check if the task update was successful
+      if (!updatedTask) {
         return res
           .status(400)
-          .json({ success: false, message: "Failed to update the issue." });
+          .json({ success: false, message: "Failed to update the task." });
       }
 
       // Respond with success and information about the update
       return res.json({
         success: true,
-        data: [{ updated: Boolean(updatedIssue) }],
+        data: [{ updated: Boolean(updatedTask) }],
       });
     } catch (error) {
-      // Handle errors during issue update
+      // Handle errors during task update
       res
         .status(400)
-        .json({ success: false, message: "Error updating the issue.", error });
+        .json({ success: false, message: "Error updating the task.", error });
     }
   },
 
-  // Controller for retrieving all issues within a project with pagination
-  getAllIssues: async (req, res) => {
+  // Controller for retrieving all tasks within a project with pagination
+  getAllTasks: async (req, res) => {
     try {
       // Extract pagination parameters and other filters from request query
       const { page, limit, trackerId, statusId, searchKey } = req.query;
@@ -257,8 +256,8 @@ module.exports = {
         limit,
       });
 
-      // Call the project service to retrieve all issues within a project
-      const issues = await projectService.getAllIssues({
+      // Call the project service to retrieve all tasks within a project
+      const tasks = await projectService.getAllTasks({
         offset: currentPagination.offset,
         limit: currentPagination.limit,
         projectId,
@@ -267,79 +266,79 @@ module.exports = {
         searchKey,
       });
 
-      // Check if issue retrieval was successful
-      if (!issues) {
+      // Check if task retrieval was successful
+      if (!tasks) {
         return res
           .status(400)
-          .json({ success: false, message: "Failed to retrieve issues." });
+          .json({ success: false, message: "Failed to retrieve tasks." });
       }
 
-      // Respond with success and the retrieved issues
-      return res.json({ success: true, data: issues });
+      // Respond with success and the retrieved tasks
+      return res.json({ success: true, data: tasks });
     } catch (error) {
-      // Handle errors during issue retrieval
+      // Handle errors during task retrieval
       res
         .status(400)
-        .json({ success: false, message: "Error retrieving issues.", error });
+        .json({ success: false, message: "Error retrieving tasks.", error });
     }
   },
 
-  // Controller for retrieving an issue by ID within a project
-  getIssueById: async (req, res) => {
+  // Controller for retrieving an task by ID within a project
+  getTaskById: async (req, res) => {
     try {
-      // Extract issue ID from request parameters
-      const { issueId } = req.params;
+      // Extract task ID from request parameters
+      const { taskId } = req.params;
 
-      // Call the project service to retrieve an issue by ID
-      const issue = await projectService.getIssueById({ issueId });
+      // Call the project service to retrieve an task by ID
+      const task = await projectService.getTaskById({ taskId });
 
-      // Check if the issue was found
-      if (!issue) {
+      // Check if the task was found
+      if (!task) {
         return res
           .status(404)
-          .json({ success: false, message: "Issue not found." });
+          .json({ success: false, message: "task not found." });
       }
 
-      // Respond with success and the retrieved issue
-      return res.json({ success: true, data: issue });
+      // Respond with success and the retrieved task
+      return res.json({ success: true, data: task });
     } catch (error) {
-      // Handle errors during issue retrieval by ID
+      // Handle errors during task retrieval by ID
       res
         .status(500)
         .json({ success: false, message: "Internal server error.", error });
     }
   },
 
-  // Controller for closing an issue by ID within a project
-  closeIssueById: async (req, res) => {
+  // Controller for closing an task by ID within a project
+  closeTaskById: async (req, res) => {
     try {
-      // Extract issue ID from request body
-      const { issueId } = req.body;
+      // Extract task ID from request body
+      const { taskId } = req.body;
 
-      // Update the issue status to closed
-      const updateIssue = await projectService.updateIssue({
-        issueId,
+      // Update the task status to closed
+      const updateTask = await projectService.updateTask({
+        taskId,
         statusId: 2, // Assuming 2 represents the 'closed' status
       });
 
-      // Close the issue
-      const issue = await projectService.closeIssueById({ issueId });
+      // Close the task
+      const task = await projectService.closeTaskById({ taskId });
 
-      // Check if the issue was successfully updated and closed
-      if (!updateIssue || !issue) {
+      // Check if the task was successfully updated and closed
+      if (!updateTask || !task) {
         return res.status(404).json({
           success: false,
-          message: "Issue not found or already closed.",
+          message: "task not found or already closed.",
         });
       }
 
       // Respond with success message
       return res.json({
         success: true,
-        message: "Issue closed successfully.",
+        message: "task closed successfully.",
       });
     } catch (error) {
-      // Handle errors during issue closure
+      // Handle errors during task closure
       res
         .status(500)
         .json({ success: false, message: "Internal server error.", error });
