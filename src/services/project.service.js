@@ -1,9 +1,9 @@
 // Import Sequelize models and helper functions
-const { Project, Issue } = require("../models/sequelize.model");
+const { Project, Task } = require("../models/sequelize.model");
 const { formattedError } = require("../utils/helpers/helpers");
 const { Op } = require("sequelize");
 
-// Exported module containing functions for project and issue management
+// Exported module containing functions for project and task management
 module.exports = {
   /**
    * Function to create a new project.
@@ -122,17 +122,17 @@ module.exports = {
   },
 
   /**
-   * Function to create a new issue within a project.
+   * Function to create a new task within a project.
    *
-   * @param {Object} newIssue - The new issue data.
-   * @returns {Promise<Object>} - A promise resolving to the created issue.
+   * @param {Object} newTask - The new task data.
+   * @returns {Promise<Object>} - A promise resolving to the created task.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  createIssue: async (newIssue) => {
+  createTask: async (newTask) => {
     try {
-      // Use Sequelize model to create a new issue
-      const issue = await Issue.create(newIssue);
-      return issue;
+      // Use Sequelize model to create a new task
+      const task = await Task.create(newTask);
+      return task;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);
@@ -140,26 +140,26 @@ module.exports = {
   },
 
   /**
-   * Function to update an issue within a project.
+   * Function to update an task within a project.
    *
-   * @param {Object} options - Options including the issueId, trackerId, description, and statusId.
-   * @returns {Promise<Object>} - A promise resolving to the updated issue.
+   * @param {Object} options - Options including the taskId, trackerId, description, and statusId.
+   * @returns {Promise<Object>} - A promise resolving to the updated task.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  updateIssue: async ({ issueId, trackerId, description, statusId }) => {
+  updateTask: async ({ taskId, trackerId, description, statusId }) => {
     try {
-      // Use Sequelize model to update an existing issue
-      const [updatedIssue] = await Issue.update(
+      // Use Sequelize model to update an existing task
+      const [updatedTask] = await Task.update(
         {
           tracker_id: trackerId,
           status_id: statusId,
           description,
         },
         {
-          where: { id: issueId },
+          where: { id: taskId },
         },
       );
-      return updatedIssue;
+      return updatedTask;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);
@@ -167,13 +167,13 @@ module.exports = {
   },
 
   /**
-   * Function to get all issues within a project with optional filters and pagination.
+   * Function to get all tasks within a project with optional filters and pagination.
    *
    * @param {Object} options - Options including offset, limit, trackerId, statusId, searchKey, and projectId.
-   * @returns {Promise<Array>} - A promise resolving to an array of issues.
+   * @returns {Promise<Array>} - A promise resolving to an array of tasks.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  getAllIssues: async ({
+  getAllTasks: async ({
     offset,
     limit,
     trackerId,
@@ -194,15 +194,15 @@ module.exports = {
         whereClause.description = { [Op.like]: `%${searchKey}%` };
       }
 
-      // Use Sequelize model to retrieve all issues within a project
-      const issues = await Issue.findAll({
+      // Use Sequelize model to retrieve all tasks within a project
+      const tasks = await Task.findAll({
         where: whereClause,
         offset,
         limit,
         paranoid: false, // Include soft-deleted records
       });
 
-      return issues;
+      return tasks;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);
@@ -210,17 +210,17 @@ module.exports = {
   },
 
   /**
-   * Function to get an issue by ID within a project.
+   * Function to get an task by ID within a project.
    *
-   * @param {Object} options - Options including the issueId.
-   * @returns {Promise<Object>} - A promise resolving to the retrieved issue.
+   * @param {Object} options - Options including the taskId.
+   * @returns {Promise<Object>} - A promise resolving to the retrieved task.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  getIssueById: async ({ issueId }) => {
+  getTaskById: async ({ taskId }) => {
     try {
-      // Use Sequelize model to retrieve an issue by ID
-      const issue = await Issue.findByPk(issueId, { paranoid: false });
-      return issue;
+      // Use Sequelize model to retrieve an task by ID
+      const task = await Task.findByPk(taskId, { paranoid: false });
+      return task;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);
@@ -228,19 +228,19 @@ module.exports = {
   },
 
   /**
-   * Function to close an issue by ID within a project (soft delete).
+   * Function to close an task by ID within a project (soft delete).
    *
-   * @param {Object} options - Options including the issueId.
-   * @returns {Promise<Object>} - A promise resolving to the closed issue.
+   * @param {Object} options - Options including the taskId.
+   * @returns {Promise<Object>} - A promise resolving to the closed task.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  closeIssueById: async ({ issueId }) => {
+  closeTaskById: async ({ taskId }) => {
     try {
-      // Use Sequelize model to soft delete an issue by setting deletedAt
-      const issue = await Issue.destroy({
-        where: { id: issueId },
+      // Use Sequelize model to soft delete an task by setting deletedAt
+      const task = await Task.destroy({
+        where: { id: taskId },
       });
-      return issue;
+      return task;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);
@@ -248,22 +248,22 @@ module.exports = {
   },
 
   /**
-   * Function to get the count of open issues within a project.
+   * Function to get the count of open tasks within a project.
    *
    * @param {Object} options - Options including the projectId.
-   * @returns {Promise<number>} - A promise resolving to the count of open issues.
+   * @returns {Promise<number>} - A promise resolving to the count of open tasks.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  getOpenIssuesCountByProjectId: async ({ projectId }) => {
+  getOpenTasksCountByProjectId: async ({ projectId }) => {
     try {
-      // Use Sequelize model to count open issues based on the absence of closedAt
-      const issuesCount = await Issue.count({
+      // Use Sequelize model to count open tasks based on the absence of closedAt
+      const tasksCount = await Task.count({
         where: {
           project_id: projectId,
           closedAt: { [Op.eq]: null },
         },
       });
-      return issuesCount;
+      return tasksCount;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);

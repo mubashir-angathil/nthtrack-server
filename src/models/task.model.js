@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
-  const Issue = sequelize.define(
-    "Issue",
+  const Task = sequelize.define(
+    "Task",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       // Other model options go here
-      tableName: "issues",
+      tableName: "tasks",
       paranoid: true,
       timestamps: true,
       deletedAt: "closedAt",
@@ -46,20 +46,20 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   // Define associations
-  Issue.associate = (models) => {
-    Issue.belongsTo(models.Project, {
+  Task.associate = (models) => {
+    Task.belongsTo(models.Project, {
       foreignKey: "project_id",
       onDelete: "RESTRICT",
     });
-    Issue.belongsTo(models.Status, {
+    Task.belongsTo(models.Status, {
       foreignKey: "status_id",
       onDelete: "RESTRICT",
     });
-    Issue.belongsTo(models.Tracker, {
+    Task.belongsTo(models.Tracker, {
       foreignKey: "tracker_id",
       onDelete: "RESTRICT",
     });
   };
 
-  return Issue;
+  return Task;
 };
