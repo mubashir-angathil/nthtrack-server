@@ -10,4 +10,10 @@ const verifyToken = require("../middlewares/verifyToken.middleware");
  */
 router.get("/trackers", verifyToken, dataController.getTrackers);
 
+/**
+ * Route for retrieving statuses. Requires a valid token for authentication.
+ * GET /api/statuses
+ */
+router.get("/statuses", verifyToken, dataController.getStatuses);
+
 module.exports = router;
