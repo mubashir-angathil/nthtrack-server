@@ -33,16 +33,17 @@ module.exports = {
       ]);
 
       const newUserDetails = {
+        id: user.id,
         username,
-        userId: user.id,
         accessToken,
         refreshToken,
       };
 
       // Respond with a success message and the created user
-      return res
-        .status(200)
-        .json({ message: "Registration successful", user: newUserDetails });
+      return res.status(200).json({
+        message: "Registration successful",
+        user: newUserDetails,
+      });
     } catch (error) {
       // Handle specific error scenarios
       if (error.name === "SequelizeUniqueConstraintError") {
@@ -102,16 +103,17 @@ module.exports = {
       ]);
 
       const newUserDetails = {
+        id: user.id,
         username,
-        userId: user.id,
         accessToken,
         refreshToken,
       };
 
       // User is authenticated, respond with success message and user details
-      return res
-        .status(200)
-        .json({ message: "Login successful", user: newUserDetails });
+      return res.status(200).json({
+        message: "Login successful",
+        user: newUserDetails,
+      });
     } catch (error) {
       // Handle specific error scenarios
       if (error.name === "SequelizeUniqueConstraintError") {

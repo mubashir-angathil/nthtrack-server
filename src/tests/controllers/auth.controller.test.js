@@ -66,8 +66,8 @@ describe("Authentication Controller", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: "Registration successful",
         user: {
+          id: 1,
           username: "testuser@gmail.com",
-          userId: 1,
           accessToken: "fakeAccessToken",
           refreshToken: "fakeRefreshToken",
         },
@@ -196,8 +196,8 @@ describe("Authentication Controller", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: "Login successful",
         user: {
+          id: 1,
           username: "testuser@gmail.com",
-          userId: 1,
           accessToken: "fakeAccessToken",
           refreshToken: "fakeRefreshToken",
         },
