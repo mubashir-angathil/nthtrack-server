@@ -32,29 +32,37 @@ module.exports = {
         generateRefreshToken({ id: user.id, username: user.username }),
       ]);
 
-      const newUserDetails = {
+      const authDetails = {
+        id: user.id,
         username,
-        userId: user.id,
         accessToken,
         refreshToken,
       };
 
       // Respond with a success message and the created user
-      return res
-        .status(200)
-        .json({ message: "Registration successful", user: newUserDetails });
+      return res.status(200).json({
+        success: true,
+        message: "Registration successful",
+        authDetails,
+      });
     } catch (error) {
       // Handle specific error scenarios
       if (error.name === "SequelizeUniqueConstraintError") {
-        return res
-          .status(400)
-          .json({ message: "Username or email is already in use" });
+        return res.status(400).json({
+          success: false,
+          message: "Username or email is already in use",
+          fieldErrors: {
+            username: "Username or email is already in use",
+          },
+        });
       }
 
       // Respond with a generic error message
-      return res
-        .status(500)
-        .json({ message: "Internal server error", err: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
     }
   },
 
@@ -81,7 +89,11 @@ module.exports = {
       // If user not found, respond with a 404 status
       if (!user) {
         return res.status(404).json({
+          success: false,
           message: "User not found. Please register if you are a new user.",
+          fieldErrors: {
+            username: "User not found. Please register if you are a new user.",
+          },
         });
       }
 
@@ -90,9 +102,13 @@ module.exports = {
 
       // If password is not valid, respond with a 401 status
       if (!isPasswordValid) {
-        return res
-          .status(401)
-          .json({ message: "Incorrect password. Please try again." });
+        return res.status(401).json({
+          success: false,
+          message: "Incorrect password. Please try again.",
+          fieldErrors: {
+            password: "Incorrect password. Please try again.",
+          },
+        });
       }
 
       // Generate an access token and refresh token for the authenticated user
@@ -101,29 +117,37 @@ module.exports = {
         generateRefreshToken({ id: user.id, username: user.username }),
       ]);
 
-      const newUserDetails = {
+      const authDetails = {
+        id: user.id,
         username,
-        userId: user.id,
         accessToken,
         refreshToken,
       };
 
       // User is authenticated, respond with success message and user details
-      return res
-        .status(200)
-        .json({ message: "Login successful", user: newUserDetails });
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        authDetails,
+      });
     } catch (error) {
       // Handle specific error scenarios
       if (error.name === "SequelizeUniqueConstraintError") {
-        return res
-          .status(400)
-          .json({ message: "Username or email is already in use" });
+        return res.status(400).json({
+          success: false,
+          message: "Username or email is already in use",
+          fieldErrors: {
+            username: "Username or email is already in use",
+          },
+        });
       }
 
       // Respond with a generic error message
-      return res
-        .status(500)
-        .json({ message: "Internal server error", error: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
     }
   },
 
@@ -150,12 +174,17 @@ module.exports = {
       });
 
       // Respond with the new access token
-      res.status(200).json({ accessToken: newAccessToken });
-    } catch (err) {
+      res.status(200).json({
+        success: true,
+        message: "Authentication successful.",
+        accessToken: newAccessToken,
+      });
+    } catch (error) {
       // Handle authentication errors
       return res.status(403).json({
+        success: false,
         message: "Authentication failed. Please login again",
-        error: err.name,
+        error: error.message,
       });
     }
   },
