@@ -64,8 +64,9 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
+        success: true,
         message: "Registration successful",
-        user: {
+        authDetails: {
           id: 1,
           username: "testuser@gmail.com",
           accessToken: "fakeAccessToken",
@@ -91,7 +92,8 @@ describe("Authentication Controller", () => {
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
-        err: "Username or password is not provided",
+        success: false,
+        error: "Username or password is not provided",
         message: "Internal server error",
       });
     });
@@ -123,7 +125,11 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         message: "Username or email is already in use",
+        fieldErrors: {
+          username: "Username or email is already in use",
+        },
       });
     });
 
@@ -154,8 +160,9 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         message: "Internal server error",
-        err: "Some unexpected error",
+        error: "Some unexpected error",
       });
     });
   });
@@ -194,8 +201,9 @@ describe("Authentication Controller", () => {
       });
 
       expect(res.json).toHaveBeenCalledWith({
+        success: true,
         message: "Login successful",
-        user: {
+        authDetails: {
           id: 1,
           username: "testuser@gmail.com",
           accessToken: "fakeAccessToken",
@@ -222,6 +230,7 @@ describe("Authentication Controller", () => {
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         error: "Username or password is not provided",
         message: "Internal server error",
       });
@@ -252,7 +261,11 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         message: "User not found. Please register if you are a new user.",
+        fieldErrors: {
+          username: "User not found. Please register if you are a new user.",
+        },
       });
     });
 
@@ -285,7 +298,11 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         message: "Incorrect password. Please try again.",
+        fieldErrors: {
+          password: "Incorrect password. Please try again.",
+        },
       });
     });
 
@@ -316,6 +333,7 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         message: "Internal server error",
         error: "Some unexpected error",
       });
@@ -356,7 +374,11 @@ describe("Authentication Controller", () => {
         username: "testuser@gmail.com",
       });
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ accessToken: "newAccessToken" });
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: "Authentication successful.",
+        accessToken: "newAccessToken",
+      });
     });
 
     it("should respond with a 403 status on authentication failure", () => {
@@ -385,8 +407,9 @@ describe("Authentication Controller", () => {
       });
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
+        success: false,
         message: "Authentication failed. Please login again",
-        error: "Error",
+        error: "Authentication failed",
       });
     });
   });
