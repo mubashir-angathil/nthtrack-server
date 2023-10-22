@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      project_name: {
+      projectName: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -15,13 +15,13 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      status_id: {
+      statusId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        // references: {
-        //   model: sequelize.models.Status,
-        //   key: "id",
-        // },
+        references: {
+          model: sequelize.models.Status,
+          key: "id",
+        },
       },
     },
     {
@@ -36,9 +36,15 @@ module.exports = (sequelize, DataTypes) => {
   // Define associations
   Project.associate = (models) => {
     Project.belongsTo(models.Status, {
-      foreignKey: "status_id",
+      foreignKey: "statusId",
       onDelete: "RESTRICT",
+      as: "status",
     });
+    // Project.hasMany(models.Task, {
+    //   foreignKey: "projectId",
+    //   onDelete: "RESTRICT",
+    //   as: "tasks",
+    // });
   };
   return Project;
 };

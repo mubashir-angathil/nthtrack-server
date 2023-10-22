@@ -11,27 +11,27 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      tracker_id: {
+      trackerId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "trackers", // table name
+          model: sequelize.models.Tracker, // table name
           key: "id",
         },
       },
-      status_id: {
+      statusId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "statuses", // table name
+          model: sequelize.models.Status, // table name
           key: "id",
         },
       },
-      project_id: {
+      projectId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "projects", // table name
+          model: sequelize.models.Project, // table name
           key: "id",
         },
       },
@@ -45,18 +45,18 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
-  // Define associations
+  // // Define associations
   Task.associate = (models) => {
     Task.belongsTo(models.Project, {
-      foreignKey: "project_id",
+      foreignKey: "projectId",
       onDelete: "RESTRICT",
     });
     Task.belongsTo(models.Status, {
-      foreignKey: "status_id",
+      foreignKey: "statusId",
       onDelete: "RESTRICT",
     });
     Task.belongsTo(models.Tracker, {
-      foreignKey: "tracker_id",
+      foreignKey: "trackerId",
       onDelete: "RESTRICT",
     });
   };

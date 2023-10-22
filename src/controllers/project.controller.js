@@ -90,7 +90,12 @@ module.exports = {
       }
 
       // Respond with success and the retrieved projects
-      return res.json({ success: true, data: projects });
+      return res.json({
+        success: true,
+        message: "Projects retrieved successfully.",
+        totalRows: projects.count,
+        data: projects.rows,
+      });
     } catch (error) {
       // Handle errors during project retrieval
       res
@@ -184,9 +189,9 @@ module.exports = {
     // Prepare the new task object
     const newTask = {
       description,
-      tracker_id: trackerId,
-      status_id: statusId,
-      project_id: projectId,
+      trackerId,
+      statusId,
+      projectId,
     };
 
     try {

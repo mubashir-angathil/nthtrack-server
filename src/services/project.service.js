@@ -1,5 +1,10 @@
 // Import Sequelize models and helper functions
-const { Project, Task } = require("../models/sequelize.model");
+const {
+  Project,
+  Task,
+  Status,
+  sequelize,
+} = require("../models/sequelize.model");
 const { formattedError } = require("../utils/helpers/helpers");
 const { Op } = require("sequelize");
 
@@ -16,8 +21,8 @@ module.exports = {
     try {
       // Use Sequelize model to create a new project
       const newProject = await Project.create({
-        project_name: projectName,
-        status_id: statusId,
+        projectName,
+        statusId,
         description,
       });
       return newProject;
@@ -39,8 +44,8 @@ module.exports = {
       // Use Sequelize model to update an existing project
       const [updatedProject] = await Project.update(
         {
-          project_name: projectName,
-          status_id: statusId,
+          projectName,
+          statusId,
           description,
         },
         {
@@ -65,15 +70,36 @@ module.exports = {
     try {
       // Define a where clause based on the presence of projectName
       const whereClause = projectName
-        ? { project_name: { [Op.like]: `%${projectName}%` } }
+        ? { projectName: { [Op.like]: `%${projectName}%` } }
         : undefined;
 
       // Use Sequelize model to retrieve all projects
-      const projects = await Project.findAll({
+      const projects = await Project.findAndCountAll({
         offset,
         limit,
         paranoid: false, // Include soft-deleted records
         where: whereClause,
+        include: [
+          {
+            model: Status,
+            as: "status",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+        ],
+
+        attributes: {
+          include: [
+            [
+              sequelize.literal(
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
+              ),
+              "taskCount",
+            ],
+          ],
+          exclude: ["statusId"],
+        },
       });
 
       return projects;
@@ -151,8 +177,8 @@ module.exports = {
       // Use Sequelize model to update an existing task
       const [updatedTask] = await Task.update(
         {
-          tracker_id: trackerId,
-          status_id: statusId,
+          trackerId,
+          statusId,
           description,
         },
         {
@@ -184,9 +210,9 @@ module.exports = {
     try {
       // Define a where clause based on the provided filters
       const whereClause = {
-        project_id: projectId,
-        tracker_id: trackerId || undefined,
-        status_id: statusId || undefined,
+        projectId,
+        trackerId: trackerId || undefined,
+        statusId: statusId || undefined,
       };
 
       // Add a search filter if searchKey is provided
@@ -259,7 +285,7 @@ module.exports = {
       // Use Sequelize model to count open tasks based on the absence of closedAt
       const tasksCount = await Task.count({
         where: {
-          project_id: projectId,
+          projectId,
           closedAt: { [Op.eq]: null },
         },
       });
