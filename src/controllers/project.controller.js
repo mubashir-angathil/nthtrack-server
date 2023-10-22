@@ -121,7 +121,11 @@ module.exports = {
       }
 
       // Respond with success and the retrieved project
-      return res.json({ success: true, data: project });
+      return res.json({
+        success: true,
+        message: "Project retrieved successfully.",
+        data: project,
+      });
     } catch (error) {
       // Handle errors during project retrieval by ID
       res.status(400).json({
@@ -279,7 +283,12 @@ module.exports = {
       }
 
       // Respond with success and the retrieved tasks
-      return res.json({ success: true, data: tasks });
+      return res.json({
+        success: true,
+        message: "Tasks retrieved successfully.",
+        totalRows: tasks.count,
+        data: tasks.rows,
+      });
     } catch (error) {
       // Handle errors during task retrieval
       res
@@ -305,7 +314,11 @@ module.exports = {
       }
 
       // Respond with success and the retrieved task
-      return res.json({ success: true, data: task });
+      return res.json({
+        success: true,
+        message: "Task retrieved successfully.",
+        data: task,
+      });
     } catch (error) {
       // Handle errors during task retrieval by ID
       res

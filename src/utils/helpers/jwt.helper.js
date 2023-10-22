@@ -13,7 +13,7 @@ module.exports = {
   generateAccessToken: ({ id, username }) =>
     // Sign the user information with the access token secret and set expiration time
     jwt.sign({ id, username }, ACCESS_TOKEN_SECRET, {
-      expiresIn: "1d",
+      expiresIn: "5m",
     }),
   /**
    * Generates a refresh token using the provided user information.
@@ -23,7 +23,7 @@ module.exports = {
   generateRefreshToken: ({ id, username }) =>
     // Sign the user information with the refresh token secret and set expiration time
     jwt.sign({ id, username }, REFRESH_TOKEN_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "5d",
     }),
   /**
    * Authenticates a JWT token using the provided token and secret.

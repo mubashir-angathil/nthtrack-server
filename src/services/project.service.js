@@ -3,6 +3,7 @@ const {
   Project,
   Task,
   Status,
+  Tracker,
   sequelize,
 } = require("../models/sequelize.model");
 const { formattedError } = require("../utils/helpers/helpers");
@@ -211,9 +212,12 @@ module.exports = {
       // Define a where clause based on the provided filters
       const whereClause = {
         projectId,
-        trackerId: trackerId || undefined,
-        statusId: statusId || undefined,
+        trackerId,
+        statusId,
       };
+
+      trackerId === undefined && delete whereClause.trackerId;
+      statusId === undefined && delete whereClause.statusId;
 
       // Add a search filter if searchKey is provided
       if (searchKey) {
@@ -221,8 +225,31 @@ module.exports = {
       }
 
       // Use Sequelize model to retrieve all tasks within a project
-      const tasks = await Task.findAll({
+      const tasks = await Task.findAndCountAll({
         where: whereClause,
+        include: [
+          {
+            model: Status,
+            as: "status",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+          {
+            model: Tracker,
+            as: "tracker",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+        ],
+        order: [
+          ["closedAt", "ASC"],
+          ["id", "DESC"],
+        ],
+        attributes: {
+          exclude: ["statusId", "trackerId", "projectId"],
+        },
         offset,
         limit,
         paranoid: false, // Include soft-deleted records
@@ -245,7 +272,28 @@ module.exports = {
   getTaskById: async ({ taskId }) => {
     try {
       // Use Sequelize model to retrieve an task by ID
-      const task = await Task.findByPk(taskId, { paranoid: false });
+      const task = await Task.findByPk(taskId, {
+        paranoid: false,
+        include: [
+          {
+            model: Tracker,
+            as: "tracker",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+          {
+            model: Status,
+            as: "status",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+        ],
+        attributes: {
+          exclude: ["projectId", "statusId", "trackerId"],
+        },
+      });
       return task;
     } catch (error) {
       // Handle errors and format the error message

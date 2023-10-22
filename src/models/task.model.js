@@ -54,10 +54,12 @@ module.exports = (sequelize, DataTypes) => {
     Task.belongsTo(models.Status, {
       foreignKey: "statusId",
       onDelete: "RESTRICT",
+      as: "status",
     });
     Task.belongsTo(models.Tracker, {
       foreignKey: "trackerId",
       onDelete: "RESTRICT",
+      as: "tracker",
     });
   };
 
