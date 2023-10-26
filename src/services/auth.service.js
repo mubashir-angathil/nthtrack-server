@@ -1,5 +1,5 @@
 const { User } = require("../models/sequelize.model");
-const { formattedError } = require("../utils/helpers/helpers");
+const { formattedError } = require("../utils/helpers/helpers.js");
 
 module.exports = {
   /**

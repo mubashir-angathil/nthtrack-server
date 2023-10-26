@@ -6,7 +6,7 @@ const {
   Tracker,
   sequelize,
 } = require("../models/sequelize.model");
-const { formattedError } = require("../utils/helpers/helpers");
+const { formattedError } = require("../utils/helpers/helpers.js");
 const { Op } = require("sequelize");
 
 // Exported module containing functions for project and task management
@@ -19,17 +19,18 @@ module.exports = {
    * @throws {Object} - Throws a formatted error in case of failure.
    */
   createProject: async ({ projectName, description, statusId }) => {
+    // eslint-disable-next-line no-useless-catch
     try {
       // Use Sequelize model to create a new project
       const newProject = await Project.create({
         projectName,
-        statusId,
         description,
+        statusId,
       });
       return newProject;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -89,12 +90,15 @@ module.exports = {
             },
           },
         ],
-
+        order: [
+          ["statusId", "ASC"],
+          ["createdAt", "DESC"],
+        ],
         attributes: {
           include: [
             [
               sequelize.literal(
-                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.statusId = 1)",
               ),
               "taskCount",
             ],
@@ -338,6 +342,27 @@ module.exports = {
         },
       });
       return tasksCount;
+    } catch (error) {
+      // Handle errors and format the error message
+      throw formattedError(error);
+    }
+  },
+  /**
+   * Function to get the status.
+   *
+   * @param {Object} options - Options including the status.
+   * @returns {Promise<number>} - A promise resolving to the count of open tasks.
+   * @throws {Object} - Throws a formatted error in case of failure.
+   */
+  getStatus: async ({ name }) => {
+    try {
+      // Use Sequelize model to fetch status based on status name
+      const status = await Status.findOne({
+        where: {
+          name,
+        },
+      });
+      return status;
     } catch (error) {
       // Handle errors and format the error message
       throw formattedError(error);

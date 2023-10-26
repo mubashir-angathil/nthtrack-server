@@ -4,6 +4,7 @@ const router = express.Router();
 
 const projectController = require("../controllers/project.controller");
 const verifyToken = require("../middlewares/verifyToken.middleware");
+const { tryCatch } = require("../utils/helpers/helpers");
 
 /**
  * Express route for creating a new project.
@@ -16,7 +17,11 @@ const verifyToken = require("../middlewares/verifyToken.middleware");
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.post("/create-project", verifyToken, projectController.createProject);
+router.post(
+  "/create-project",
+  verifyToken,
+  tryCatch(projectController.createProject),
+);
 
 /**
  * Express route for updating an existing project.

@@ -1,3 +1,5 @@
+const { Sequelize } = require("../../models/sequelize.model");
+
 module.exports = {
   /**
    * A function to format a Sequelize SQL error for consistent error handling.
@@ -5,12 +7,44 @@ module.exports = {
    * @returns {Object} - A formatted error object containing name, message, and SQL error details.
    */
   formattedError: (error) => {
-    // Create a formatted error object with specific properties
-    return {
-      name: error?.name, // Extract the error name (e.g., SequelizeDatabaseError)
-      message: error?.message, // Extract the error message
-      query: error?.sql, // Extract the SQL-related error details (if available)
+    const formattedErrorPrototype = {
+      getError: function () {
+        const data = {
+          success: false,
+          message: this.error.message || "Something went wrong",
+          error: {
+            name: this.error.name || "Custom error",
+            query: this.error.sql,
+            fieldErrors: this.error.fieldErrors,
+          },
+        };
+        return { data };
+      },
     };
+
+    const formattedError = Object.create(formattedErrorPrototype);
+
+    if (Sequelize.ValidationError) {
+      formattedError.error = {
+        message: error.message,
+        query: error,
+        name: error.name,
+      };
+
+      if (error?.errors) {
+        formattedError.error.fieldErrors = [];
+
+        error.errors.forEach((item) => {
+          const fieldError = {
+            field: item.path,
+            message: item.message,
+          };
+          formattedError.error.fieldErrors.push(fieldError);
+        });
+      }
+    }
+
+    return formattedError.getError();
   },
 
   /**
@@ -39,6 +73,13 @@ module.exports = {
         offset: page ? parseInt(page) : 0,
         limit: limit ? parseInt(limit) : undefined,
       };
+    }
+  },
+  tryCatch: (controller) => async (req, res, next) => {
+    try {
+      await controller(req, res, next);
+    } catch (error) {
+      next(error);
     }
   },
 };

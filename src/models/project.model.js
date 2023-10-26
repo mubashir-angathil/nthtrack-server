@@ -10,10 +10,22 @@ module.exports = (sequelize, DataTypes) => {
       projectName: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+          len: {
+            args: [2, 50],
+            msg: "Project name must be between 2 and 50 characters.",
+          },
+        },
       },
       description: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(1000),
         allowNull: false,
+        validate: {
+          len: {
+            args: [2, 1000],
+            msg: "Description name must be between 2 and 1000 characters.",
+          },
+        },
       },
       statusId: {
         type: DataTypes.INTEGER,
