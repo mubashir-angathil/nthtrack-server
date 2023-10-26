@@ -5,32 +5,33 @@ const { getCurrentPagination } = require("../utils/helpers/helpers");
 // Exported module containing various controllers for project and task management
 module.exports = {
   // Controller for creating a new project
-  createProject: async (req, res) => {
-    const { projectName, description, statusId } = req.body;
+  createProject: async (req, res, next) => {
+    const { projectName, description } = req.body;
 
-    try {
-      // Call the project service to create a new project
-      const project = await projectService.createProject({
-        projectName,
-        description,
-        statusId,
-      });
+    // Assuming "Closed" is the default status name
+    const openStatus = await projectService.getStatus({ name: "opened" });
 
-      // Check if the project creation was successful
-      if (!project) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to create a project." });
-      }
-
-      // Respond with success and the created project data
-      return res.json({ success: true, data: project });
-    } catch (error) {
-      // Handle errors during project creation
-      res
-        .status(400)
-        .json({ success: false, message: "Error creating a project.", error });
+    if (!openStatus?.id) {
+      throw new Error("Status not found!");
     }
+    // Call the project service to create a new project
+    const project = await projectService.createProject({
+      projectName,
+      description,
+      statusId: openStatus.id,
+    });
+
+    // Check if the project creation was successful
+    if (!project) {
+      next({ message: "Failed to create a project." });
+    }
+
+    // Respond with success and the created project data
+    return res.json({
+      success: true,
+      message: "Project created successfully.",
+      data: project,
+    });
   },
 
   // Controller for updating an existing project
