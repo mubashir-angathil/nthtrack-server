@@ -12,6 +12,7 @@ const {
   DATABASE_PASSWORD,
   DATABASE_USER_NAME,
 } = require("../configs/configs");
+const { default: consola } = require("consola");
 
 const sequelize = new Sequelize({
   host: HOST,
@@ -19,6 +20,9 @@ const sequelize = new Sequelize({
   database: DATABASE,
   username: DATABASE_USER_NAME,
   password: DATABASE_PASSWORD,
+  logging: (message) => {
+    consola.info(message.concat("\n"));
+  },
 });
 
 fs.readdirSync(__dirname)
@@ -38,6 +42,7 @@ fs.readdirSync(__dirname)
   });
 
 Object.keys(db).forEach((modelName) => {
+  consola.box(modelName);
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }

@@ -52,11 +52,11 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "RESTRICT",
       as: "status",
     });
-    // Project.hasMany(models.Task, {
-    //   foreignKey: "projectId",
-    //   onDelete: "RESTRICT",
-    //   as: "tasks",
-    // });
+    Project.hasMany(models.Task, {
+      foreignKey: "projectId",
+      onDelete: "RESTRICT",
+      as: "tasks",
+    });
   };
   return Project;
 };

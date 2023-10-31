@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
-  // // Define associations
+  // Define associations
   Task.associate = (models) => {
     Task.belongsTo(models.Project, {
       foreignKey: "projectId",
