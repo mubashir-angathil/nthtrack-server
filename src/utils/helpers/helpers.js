@@ -30,7 +30,6 @@ module.exports = {
         query: error,
         name: error.name,
       };
-
       if (error?.errors) {
         formattedError.error.fieldErrors = [];
 
@@ -42,6 +41,7 @@ module.exports = {
           formattedError.error.fieldErrors.push(fieldError);
         });
       }
+      return formattedError.getError();
     }
 
     return formattedError.getError();

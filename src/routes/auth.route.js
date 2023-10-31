@@ -2,6 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 const authController = require("../controllers/auth.controller");
+const { tryCatch } = require("../utils/helpers/helpers");
 
 /**
  * Express route for user sign-up.
@@ -34,6 +35,6 @@ router.post("/sign-in", authController.doSignIn);
  * @param {string} path - Express route path.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.post("/token", authController.getNewAccessToken);
+router.post("/token", tryCatch(authController.getNewAccessToken));
 
 module.exports = router;

@@ -25,6 +25,7 @@ module.exports = {
     jwt.sign({ id, username }, REFRESH_TOKEN_SECRET, {
       expiresIn: "5d",
     }),
+
   /**
    * Authenticates a JWT token using the provided token and secret.
    * @param {object} params - Object containing 'token' and 'secret'.

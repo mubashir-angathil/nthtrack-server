@@ -34,7 +34,11 @@ router.post(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch("/update-project", verifyToken, projectController.updateProject);
+router.patch(
+  "/update-project",
+  verifyToken,
+  tryCatch(projectController.updateProject),
+);
 
 /**
  * Express route for retrieving all projects.
@@ -73,7 +77,11 @@ router.get("/:projectId", verifyToken, projectController.getProjectById);
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch("/close", verifyToken, projectController.closeProjectById);
+router.patch(
+  "/close",
+  verifyToken,
+  tryCatch(projectController.closeProjectById),
+);
 
 /**
  * Express route for creating an task within a project.
@@ -89,7 +97,7 @@ router.patch("/close", verifyToken, projectController.closeProjectById);
 router.post(
   "/:projectId/task/create",
   verifyToken,
-  projectController.createTask,
+  tryCatch(projectController.createTask),
 );
 
 /**
@@ -103,7 +111,11 @@ router.post(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch("/update-task", verifyToken, projectController.updateTask);
+router.patch(
+  "/update-task",
+  verifyToken,
+  tryCatch(projectController.updateTask),
+);
 
 /**
  * Express route for retrieving all tasks within a project.
@@ -142,6 +154,10 @@ router.get("/task/:taskId", verifyToken, projectController.getTaskById);
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch("/task/close", verifyToken, projectController.closeTaskById);
+router.patch(
+  "/task/close",
+  verifyToken,
+  tryCatch(projectController.closeTaskById),
+);
 
 module.exports = router;

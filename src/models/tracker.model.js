@@ -25,8 +25,8 @@ module.exports = (sequelize, DataTypes) => {
       defaults: { name: "Bug" },
     }).then(() => {
       return Tracker.findOrCreate({
-        where: { name: "Error" },
-        defaults: { name: "Error" },
+        where: { name: "Feature" },
+        defaults: { name: "Feature" },
       });
     });
   });

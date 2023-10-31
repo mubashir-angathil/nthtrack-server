@@ -5,6 +5,7 @@ const {
   authenticateJwtToken,
 } = require("../utils/helpers/jwt.helper");
 const { REFRESH_TOKEN_SECRET } = require("../configs/configs");
+const { httpStatusCode } = require("../utils/constants/Constants");
 
 module.exports = {
   /**
@@ -158,33 +159,32 @@ module.exports = {
    * @param {Object} res - Express response object.
    * @returns {Object} - HTTP response with a new access token.
    */
-  getNewAccessToken: (req, res) => {
+  getNewAccessToken: (req, res, next) => {
     const { refreshToken } = req.body;
-    try {
-      // Authenticate the refresh token and extract user information
-      const user = authenticateJwtToken({
-        token: refreshToken,
-        secret: REFRESH_TOKEN_SECRET,
-      });
 
-      // Generate a new access token
-      const newAccessToken = generateAccessToken({
-        id: user.id,
-        username: user.username,
-      });
+    // Authenticate the refresh token and extract user information
+    const user = authenticateJwtToken({
+      token: refreshToken,
+      secret: REFRESH_TOKEN_SECRET,
+    });
 
+    // Generate a new access token
+    const newAccessToken = generateAccessToken({
+      id: user.id,
+      username: user.username,
+    });
+
+    if (newAccessToken) {
       // Respond with the new access token
-      res.status(200).json({
+      res.status(httpStatusCode.OK).json({
         success: true,
         message: "Authentication successful.",
         accessToken: newAccessToken,
       });
-    } catch (error) {
-      // Handle authentication errors
-      return res.status(403).json({
-        success: false,
+    } else {
+      throw next({
+        httpCode: httpStatusCode.UNAUTHORIZED,
         message: "Authentication failed. Please login again",
-        error: error.message,
       });
     }
   },

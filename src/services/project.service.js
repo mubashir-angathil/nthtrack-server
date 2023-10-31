@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 // Import Sequelize models and helper functions
 const {
   Project,
@@ -19,7 +20,6 @@ module.exports = {
    * @throws {Object} - Throws a formatted error in case of failure.
    */
   createProject: async ({ projectName, description, statusId }) => {
-    // eslint-disable-next-line no-useless-catch
     try {
       // Use Sequelize model to create a new project
       const newProject = await Project.create({
@@ -148,7 +148,7 @@ module.exports = {
       return project;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -166,7 +166,7 @@ module.exports = {
       return task;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -177,13 +177,12 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to the updated task.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  updateTask: async ({ taskId, trackerId, description, statusId }) => {
+  updateTask: async ({ taskId, trackerId, description }) => {
     try {
       // Use Sequelize model to update an existing task
       const [updatedTask] = await Task.update(
         {
           trackerId,
-          statusId,
           description,
         },
         {
@@ -193,7 +192,7 @@ module.exports = {
       return updatedTask;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -321,7 +320,7 @@ module.exports = {
       return task;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 

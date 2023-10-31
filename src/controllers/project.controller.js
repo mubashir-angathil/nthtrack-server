@@ -8,7 +8,7 @@ module.exports = {
   createProject: async (req, res, next) => {
     const { projectName, description } = req.body;
 
-    // Assuming "Closed" is the default status name
+    // Assuming "Opened" is the default status name
     const openStatus = await projectService.getStatus({ name: "opened" });
 
     if (!openStatus?.id) {
@@ -35,38 +35,28 @@ module.exports = {
   },
 
   // Controller for updating an existing project
-  updateProject: async (req, res) => {
+  updateProject: async (req, res, next) => {
     const { projectName, description, statusId, projectId } = req.body;
 
-    try {
-      // Call the project service to update an existing project
-      const updatedProject = await projectService.updateProject({
-        projectId,
-        projectName,
-        description,
-        statusId,
-      });
+    // Call the project service to update an existing project
+    const updatedProject = await projectService.updateProject({
+      projectId,
+      projectName,
+      description,
+      statusId,
+    });
 
-      // Check if the project update was successful
-      if (!updatedProject) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to update the project." });
-      }
-
-      // Respond with success and information about the update
-      return res.json({
-        success: true,
-        data: [{ updated: Boolean(updatedProject) }],
-      });
-    } catch (error) {
-      // Handle errors during project update
-      res.status(400).json({
-        success: false,
-        message: "Error updating the project.",
-        error,
-      });
+    // Check if the project update was successful
+    if (!updatedProject) {
+      next({ message: "Failed to update the project." });
     }
+
+    // Respond with success and information about the update
+    return res.json({
+      success: true,
+      message: "Successfully updated project details.",
+      data: [{ updated: Boolean(updatedProject) }],
+    });
   },
 
   // Controller for retrieving all projects with pagination
@@ -138,119 +128,104 @@ module.exports = {
   },
 
   // Controller for closing a project by ID
-  closeProjectById: async (req, res) => {
-    try {
-      // Extract project ID from request body
-      const { projectId } = req.body;
+  closeProjectById: async (req, res, next) => {
+    // Extract project ID from request body
+    const { projectId } = req.body;
 
-      // Check the count of open tasks related to the project
-      const openTasksCount = await projectService.getOpenTasksCountByProjectId({
-        projectId,
+    // Check the count of open tasks related to the project
+    const openTasksCount = await projectService.getOpenTasksCountByProjectId({
+      projectId,
+    });
+
+    // If there are open tasks, prevent closing the project
+    if (openTasksCount !== 0) {
+      next({
+        httpCode: 400,
+        message: "Cannot close the project with open tasks.",
       });
-
-      // If there are open tasks, prevent closing the project
-      if (openTasksCount !== 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot close the project with open tasks.",
-        });
-      }
-
-      // Update the project status to closed
-      const updatedProject = await projectService.updateProject({
-        projectId,
-        statusId: 2, // Assuming 2 represents the 'closed' status
-      });
-
-      // Close the project
-      const closeProject = await projectService.closeProjectById({ projectId });
-
-      // Check if the project was successfully updated and closed
-      if (!updatedProject || !closeProject) {
-        return res.status(404).json({
-          success: false,
-          message: "Project not found or already closed.",
-        });
-      }
-
-      // Respond with success message
-      return res.json({
-        success: true,
-        message: "Project closed successfully.",
-      });
-    } catch (error) {
-      // Handle errors during project closure
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error.", error });
     }
+
+    // Update the project status to closed
+    const updatedProject = await projectService.updateProject({
+      projectId,
+      statusId: 2, // Assuming 2 represents the 'closed' status
+    });
+
+    // Close the project
+    const closeProject = await projectService.closeProjectById({ projectId });
+
+    // Check if the project was successfully updated and closed
+    if (!updatedProject || !closeProject) {
+      next({
+        message: "Project not found or already closed.",
+      });
+    }
+
+    // Respond with success message
+    return res.status(200).json({
+      success: true,
+      message: "Project closed successfully.",
+    });
   },
 
   // Controller for creating an task within a project
-  createTask: async (req, res) => {
+  createTask: async (req, res, next) => {
     const { projectId } = req.params;
-    const { trackerId, statusId, description } = req.body;
+    const { trackerId, description } = req.body;
+
+    // Assuming "Opened" is the default status name
+    const openStatus = await projectService.getStatus({ name: "opened" });
+
+    if (!openStatus?.id) {
+      throw new Error("Status not found!");
+    }
 
     // Prepare the new task object
     const newTask = {
       description,
       trackerId,
-      statusId,
-      projectId,
+      projectId: parseInt(projectId),
+      statusId: openStatus.id,
     };
 
-    try {
-      // Call the project service to create a new task
-      const task = await projectService.createTask(newTask);
+    // Call the project service to create a new task
+    const task = await projectService.createTask(newTask);
 
-      // Check if the task creation was successful
-      if (!task) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to create an task." });
-      }
-
-      // Respond with success and the created task data
-      return res.json({ success: true, data: task });
-    } catch (error) {
-      // Handle errors during task creation
-      res
-        .status(400)
-        .json({ success: false, message: "Error creating an task.", error });
+    // Check if the task creation was successful
+    if (!task) {
+      next({ message: "Failed to create an task." });
     }
+
+    // Respond with success and the created task data
+    return res.json({
+      success: true,
+      message: "Task created successfully",
+      data: task,
+    });
   },
 
   // Controller for updating an task within a project
-  updateTask: async (req, res) => {
-    const { trackerId, statusId, description, taskId } = req.body;
+  updateTask: async (req, res, next) => {
+    const { trackerId, description, taskId } = req.body;
 
-    try {
-      // Call the project service to update an existing task
-      const updatedTask = await projectService.updateTask({
-        taskId,
-        trackerId,
-        description,
-        statusId,
-      });
+    // Call the project service to update an existing task
+    const updatedTask = await projectService.updateTask({
+      taskId,
+      trackerId,
+      description,
+    });
 
-      // Check if the task update was successful
-      if (!updatedTask) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to update the task." });
-      }
-
-      // Respond with success and information about the update
-      return res.json({
-        success: true,
-        data: [{ updated: Boolean(updatedTask) }],
-      });
-    } catch (error) {
-      // Handle errors during task update
-      res
-        .status(400)
-        .json({ success: false, message: "Error updating the task.", error });
+    // Check if the task update was successful
+    if (!updatedTask) {
+      next({ message: "Failed to update the task." });
     }
+
+    // Respond with success and information about the update
+    return res.status(200).json({
+      success: true,
+      message: "Successfully updated task details.",
+      data: [{ updated: Boolean(updatedTask) }],
+    });
   },
 
   // Controller for retrieving all tasks within a project with pagination
@@ -329,38 +304,28 @@ module.exports = {
   },
 
   // Controller for closing an task by ID within a project
-  closeTaskById: async (req, res) => {
-    try {
-      // Extract task ID from request body
-      const { taskId } = req.body;
+  closeTaskById: async (req, res, next) => {
+    // Extract task ID from request body
+    const { taskId } = req.body;
 
-      // Update the task status to closed
-      const updateTask = await projectService.updateTask({
-        taskId,
-        statusId: 2, // Assuming 2 represents the 'closed' status
-      });
+    // Update the task status to closed
+    const updateTask = await projectService.updateTask({
+      taskId,
+      statusId: 2, // Assuming 2 represents the 'closed' status
+    });
 
-      // Close the task
-      const task = await projectService.closeTaskById({ taskId });
+    // Close the task
+    const task = await projectService.closeTaskById({ taskId });
 
-      // Check if the task was successfully updated and closed
-      if (!updateTask || !task) {
-        return res.status(404).json({
-          success: false,
-          message: "task not found or already closed.",
-        });
-      }
-
-      // Respond with success message
-      return res.json({
-        success: true,
-        message: "task closed successfully.",
-      });
-    } catch (error) {
-      // Handle errors during task closure
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error.", error });
+    // Check if the task was successfully updated and closed
+    if (!updateTask || !task) {
+      next({ message: "task not found or already closed." });
     }
+
+    // Respond with success message
+    return res.status(200).json({
+      success: true,
+      message: "task closed successfully.",
+    });
   },
 };
