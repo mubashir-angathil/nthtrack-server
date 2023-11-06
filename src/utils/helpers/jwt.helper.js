@@ -13,7 +13,7 @@ module.exports = {
   generateAccessToken: ({ id, username }) =>
     // Sign the user information with the access token secret and set expiration time
     jwt.sign({ id, username }, ACCESS_TOKEN_SECRET, {
-      expiresIn: "5m",
+      expiresIn: "5d",
     }),
   /**
    * Generates a refresh token using the provided user information.

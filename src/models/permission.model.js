@@ -4,37 +4,24 @@ module.exports = (sequelize, DataTypes) => {
     {
       id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true,
         primaryKey: true,
+        autoIncrement: true,
       },
-      userId: {
-        type: DataTypes.INTEGER,
-        references: {
-          model: sequelize.models.User,
-          key: "id",
+      name: {
+        type: DataTypes.STRING,
+        unique: true,
+        validate: {
+          msg: "Permission already existed",
         },
       },
-      projectId: {
-        type: DataTypes.INTEGER,
-        references: {
-          model: sequelize.models.Project,
-          key: "id",
-        },
+      json: {
+        type: DataTypes.JSON,
+        allowNull: false,
       },
     },
     {
-      tableName: "permissions",
+      tableName: "userPermissions",
     },
   );
-  Permission.associate = (models) => {
-    Permission.belongsTo(models.User, {
-      foreignKey: "userId",
-      onDelete: "CASCADE",
-    });
-    Permission.belongsTo(models.Project, {
-      foreignKey: "projectId",
-      onDelete: "CASCADE",
-    });
-  };
   return Permission;
 };

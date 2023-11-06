@@ -1,5 +1,5 @@
+/* eslint-disable no-useless-catch */
 const { User } = require("../models/sequelize.model");
-const { formattedError } = require("../utils/helpers/helpers.js");
 
 module.exports = {
   /**
@@ -13,7 +13,7 @@ module.exports = {
       const user = await User.create({ username, password });
       return user;
     } catch (error) {
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -28,7 +28,7 @@ module.exports = {
       const user = await User.findOne({ where: { username } });
       return user;
     } catch (error) {
-      throw formattedError(error);
+      throw error;
     }
   },
 };

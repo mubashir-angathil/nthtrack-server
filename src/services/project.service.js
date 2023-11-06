@@ -1,5 +1,4 @@
 /* eslint-disable no-useless-catch */
-// Import Sequelize models and helper functions
 const {
   Project,
   Task,
@@ -7,7 +6,7 @@ const {
   Tracker,
   sequelize,
 } = require("../models/sequelize.model");
-const { formattedError } = require("../utils/helpers/helpers.js");
+
 const { Op } = require("sequelize");
 
 // Exported module containing functions for project and task management
@@ -15,15 +14,15 @@ module.exports = {
   /**
    * Function to create a new project.
    *
-   * @param {Object} projectData - The project data, including projectName, description, and statusId.
+   * @param {Object} projectData - The project data, including name, description, and statusId.
    * @returns {Promise<Object>} - A promise resolving to the created project.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  createProject: async ({ projectName, description, statusId }) => {
+  createProject: async ({ name, description, statusId }) => {
     try {
       // Use Sequelize model to create a new project
       const newProject = await Project.create({
-        projectName,
+        name,
         description,
         statusId,
       });
@@ -37,16 +36,16 @@ module.exports = {
   /**
    * Function to update an existing project.
    *
-   * @param {Object} projectData - The project data, including projectName, description, statusId, and projectId.
+   * @param {Object} projectData - The project data, including name, description, statusId, and projectId.
    * @returns {Promise<Object>} - A promise resolving to the updated project.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  updateProject: async ({ projectName, description, statusId, projectId }) => {
+  updateProject: async ({ name, description, statusId, projectId }) => {
     try {
       // Use Sequelize model to update an existing project
       const [updatedProject] = await Project.update(
         {
-          projectName,
+          name,
           statusId,
           description,
         },
@@ -57,22 +56,22 @@ module.exports = {
       return updatedProject;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
   /**
    * Function to get all projects with optional pagination and filtering by name.
    *
-   * @param {Object} options - Options for pagination and filtering, including offset, limit, and projectName.
+   * @param {Object} options - Options for pagination and filtering, including offset, limit, and name.
    * @returns {Promise<Array>} - A promise resolving to an array of projects.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  getAllProjects: async ({ offset, limit, projectName }) => {
+  getAllProjects: async ({ offset, limit, name }) => {
     try {
-      // Define a where clause based on the presence of projectName
-      const whereClause = projectName
-        ? { projectName: { [Op.like]: `%${projectName}%` } }
+      // Define a where clause based on the presence of name
+      const whereClause = name
+        ? { name: { [Op.like]: `%${name}%` } }
         : undefined;
 
       // Use Sequelize model to retrieve all projects
@@ -110,7 +109,7 @@ module.exports = {
       return projects;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -124,11 +123,13 @@ module.exports = {
   getProjectById: async ({ projectId }) => {
     try {
       // Use Sequelize model to retrieve a project by ID
-      const project = await Project.findByPk(projectId, { paranoid: false });
+      const project = await Project.findByPk(projectId, {
+        paranoid: false,
+      });
       return project;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -261,7 +262,7 @@ module.exports = {
       return tasks;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -300,7 +301,7 @@ module.exports = {
       return task;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 
@@ -343,7 +344,7 @@ module.exports = {
       return tasksCount;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
   /**
@@ -364,7 +365,7 @@ module.exports = {
       return status;
     } catch (error) {
       // Handle errors and format the error message
-      throw formattedError(error);
+      throw error;
     }
   },
 };

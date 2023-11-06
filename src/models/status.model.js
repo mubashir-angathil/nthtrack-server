@@ -19,17 +19,17 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   // Insert seed data if not found
-  Status.sync({ force: false }).then(() => {
-    return Status.findOrCreate({
-      where: { name: "Opened" },
-      defaults: { name: "Opened" },
-    }).then(() => {
-      return Status.findOrCreate({
-        where: { name: "Closed" },
-        defaults: { name: "Closed" },
-      });
-    });
-  });
+  // Status.sync({ force: false }).then(() => {
+  //   return Status.findOrCreate({
+  //     where: { name: "Opened" },
+  //     defaults: { name: "Opened" },
+  //   }).then(() => {
+  //     return Status.findOrCreate({
+  //       where: { name: "Closed" },
+  //       defaults: { name: "Closed" },
+  //     });
+  //   });
+  // });
 
   return Status;
 };

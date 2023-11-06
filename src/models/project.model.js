@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      projectName: {
+      name: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
@@ -35,6 +35,14 @@ module.exports = (sequelize, DataTypes) => {
           key: "id",
         },
       },
+      createdBy: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: sequelize.models.User,
+          key: "id",
+        },
+      },
     },
     {
       // Other model options go here
@@ -51,6 +59,10 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "statusId",
       onDelete: "RESTRICT",
       as: "status",
+    });
+    Project.belongsTo(models.User, {
+      foreignKey: "createdBy",
+      onDelete: "RESTRICT",
     });
     Project.hasMany(models.Task, {
       foreignKey: "projectId",

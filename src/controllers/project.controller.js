@@ -6,7 +6,7 @@ const { getCurrentPagination } = require("../utils/helpers/helpers");
 module.exports = {
   // Controller for creating a new project
   createProject: async (req, res, next) => {
-    const { projectName, description } = req.body;
+    const { name, description } = req.body;
 
     // Assuming "Opened" is the default status name
     const openStatus = await projectService.getStatus({ name: "opened" });
@@ -16,7 +16,7 @@ module.exports = {
     }
     // Call the project service to create a new project
     const project = await projectService.createProject({
-      projectName,
+      name,
       description,
       statusId: openStatus.id,
     });
@@ -36,12 +36,12 @@ module.exports = {
 
   // Controller for updating an existing project
   updateProject: async (req, res, next) => {
-    const { projectName, description, statusId, projectId } = req.body;
+    const { name, description, statusId, projectId } = req.body;
 
     // Call the project service to update an existing project
     const updatedProject = await projectService.updateProject({
       projectId,
-      projectName,
+      name,
       description,
       statusId,
     });
@@ -60,39 +60,30 @@ module.exports = {
   },
 
   // Controller for retrieving all projects with pagination
-  getAllProjects: async (req, res) => {
-    try {
-      // Extract pagination parameters and project name from request query
-      const { page, limit, projectName } = req.query;
-      const currentPagination = getCurrentPagination({ page, limit });
+  getAllProjects: async (req, res, next) => {
+    // Extract pagination parameters and project name from request query
+    const { page, limit, name } = req.query;
+    const currentPagination = getCurrentPagination({ page, limit });
 
-      // Call the project service to retrieve all projects
-      const projects = await projectService.getAllProjects({
-        offset: currentPagination.offset,
-        limit: currentPagination.limit,
-        projectName,
-      });
+    // Call the project service to retrieve all projects
+    const projects = await projectService.getAllProjects({
+      offset: currentPagination.offset,
+      limit: currentPagination.limit,
+      name,
+    });
 
-      // Check if project retrieval was successful
-      if (!projects) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to retrieve projects." });
-      }
-
-      // Respond with success and the retrieved projects
-      return res.json({
-        success: true,
-        message: "Projects retrieved successfully.",
-        totalRows: projects.count,
-        data: projects.rows,
-      });
-    } catch (error) {
-      // Handle errors during project retrieval
-      res
-        .status(400)
-        .json({ success: false, message: "Error retrieving projects.", error });
+    // Check if project retrieval was successful
+    if (!projects) {
+      throw next({ message: "projects are empty." });
     }
+
+    // Respond with success and the retrieved projects
+    return res.json({
+      success: true,
+      message: "Projects retrieved successfully.",
+      totalRows: projects.count,
+      data: projects.rows,
+    });
   },
 
   // Controller for retrieving a project by ID

@@ -51,7 +51,7 @@ router.patch(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.get("/all", verifyToken, projectController.getAllProjects);
+router.get("/all", verifyToken, tryCatch(projectController.getAllProjects));
 
 /**
  * Express route for retrieving a project by ID.
@@ -64,7 +64,11 @@ router.get("/all", verifyToken, projectController.getAllProjects);
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.get("/:projectId", verifyToken, projectController.getProjectById);
+router.get(
+  "/:projectId",
+  verifyToken,
+  tryCatch(projectController.getProjectById),
+);
 
 /**
  * Express route for closing a project by ID.
@@ -128,7 +132,11 @@ router.patch(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.get("/:projectId/task/all", verifyToken, projectController.getAllTasks);
+router.get(
+  "/:projectId/task/all",
+  verifyToken,
+  tryCatch(projectController.getAllTasks),
+);
 
 /**
  * Express route for retrieving an task by ID within a project.
@@ -141,7 +149,11 @@ router.get("/:projectId/task/all", verifyToken, projectController.getAllTasks);
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.get("/task/:taskId", verifyToken, projectController.getTaskById);
+router.get(
+  "/task/:taskId",
+  verifyToken,
+  tryCatch(projectController.getTaskById),
+);
 
 /**
  * Express route for closing an task by ID within a project.

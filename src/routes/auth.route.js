@@ -24,7 +24,7 @@ router.post("/sign-up", authController.doSignUp);
  * @param {string} path - Express route path.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.post("/sign-in", authController.doSignIn);
+router.post("/login", tryCatch(authController.doSignIn));
 
 /**
  * Express route for obtaining a new access token using a refresh token.

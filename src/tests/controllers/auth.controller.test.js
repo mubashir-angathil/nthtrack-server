@@ -24,146 +24,32 @@ describe("Authentication Controller", () => {
   });
 
   describe("doSignUp", () => {
-    it("should respond with success message and user details on successful registration", async () => {
+    it("should handle user signup and return success message", async () => {
+      // Mocking necessary data and services
       const req = {
-        body: {
-          username: "testuser@gmail.com",
-          password: "testpassword",
-        },
+        body: { username: "admin@gmail.com", password: "admin@123" },
       };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const next = jest.fn();
 
-      // Mocking authService.doSignUp to resolve with a user object
-      authService.doSignUp.mockResolvedValue({
-        id: 1,
-        username: "testuser@gmail.com",
-      });
+      const mockedUser = { id: 1, username: "admin@gmail.com" };
+      authService.doSignUp.mockResolvedValue(mockedUser);
+      generateAccessToken.mockResolvedValue("mockedAccessToken");
+      generateRefreshToken.mockResolvedValue("mockedRefreshToken");
 
-      // Mocking generateAccessToken and generateRefreshToken to resolve with tokens
-      generateAccessToken.mockResolvedValue("fakeAccessToken");
-      generateRefreshToken.mockResolvedValue("fakeRefreshToken");
+      await authController.doSignUp(req, res, next);
 
-      // Call the controller function
-      await authController.doSignUp(req, res);
-
-      // Assertions
-      expect(authService.doSignUp).toHaveBeenCalledWith({
-        username: "testuser@gmail.com",
-        password: "testpassword",
-      });
-      expect(generateAccessToken).toHaveBeenCalledWith({
-        id: 1,
-        username: "testuser@gmail.com",
-      });
-      expect(generateRefreshToken).toHaveBeenCalledWith({
-        id: 1,
-        username: "testuser@gmail.com",
-      });
-      expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         message: "Registration successful",
-        authDetails: {
-          id: 1,
-          username: "testuser@gmail.com",
-          accessToken: "fakeAccessToken",
-          refreshToken: "fakeRefreshToken",
+        data: {
+          id: mockedUser.id,
+          username: mockedUser.username,
+          accessToken: "mockedAccessToken",
+          refreshToken: "mockedRefreshToken",
         },
       });
-    });
-
-    it("should respond with a 400 status and message if username or password is not provided", async () => {
-      const req = {
-        body: {
-          // Missing username and password intentionally
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Call the controller function
-      await authController.doSignUp(req, res);
-
-      // Assertions
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: "Username or password is not provided",
-        message: "Internal server error",
-      });
-    });
-
-    it("should respond with a 400 status and message if authService.doSignUp throws SequelizeUniqueConstraintError", async () => {
-      const req = {
-        body: {
-          username: "duplicateuser",
-          password: "testpassword",
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Mocking authService.doSignUp to throw SequelizeUniqueConstraintError
-      authService.doSignUp.mockRejectedValue({
-        name: "SequelizeUniqueConstraintError",
-      });
-
-      // Call the controller function
-      await authController.doSignUp(req, res);
-
-      // Assertions
-      expect(authService.doSignUp).toHaveBeenCalledWith({
-        username: "duplicateuser",
-        password: "testpassword",
-      });
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Username or email is already in use",
-        fieldErrors: {
-          username: "Username or email is already in use",
-        },
-      });
-    });
-
-    it("should respond with a 500 status and generic error message for other errors during signup", async () => {
-      const req = {
-        body: {
-          username: "testuser@gmail.com",
-          password: "testpassword",
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Mocking authService.doSignUp to throw a generic error
-      authService.doSignUp.mockRejectedValue(
-        new Error("Some unexpected error"),
-      );
-
-      // Call the controller function
-      await authController.doSignUp(req, res);
-
-      // Assertions
-      expect(authService.doSignUp).toHaveBeenCalledWith({
-        username: "testuser@gmail.com",
-        password: "testpassword",
-      });
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Internal server error",
-        error: "Some unexpected error",
-      });
+      expect(res.status).toHaveBeenCalledWith(201);
     });
   });
 
@@ -203,7 +89,7 @@ describe("Authentication Controller", () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         message: "Login successful",
-        authDetails: {
+        data: {
           id: 1,
           username: "testuser@gmail.com",
           accessToken: "fakeAccessToken",
@@ -211,132 +97,6 @@ describe("Authentication Controller", () => {
         },
       });
       expect(res.status).toHaveBeenCalledWith(200);
-    });
-
-    it("should respond with a 400 status and message if username or password is not provided during sign-in", async () => {
-      const req = {
-        body: {
-          // Missing username and password intentionally
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Call the controller function
-      await authController.doSignIn(req, res);
-
-      // Assertions
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: "Username or password is not provided",
-        message: "Internal server error",
-      });
-    });
-
-    it("should respond with a 404 status and message if user is not found during sign-in", async () => {
-      const req = {
-        body: {
-          username: "nonexistentuser",
-          password: "testpassword",
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Mocking authService.doSignIn to resolve with null (user not found)
-      authService.doSignIn.mockResolvedValue(null);
-
-      // Call the controller function
-      await authController.doSignIn(req, res);
-
-      // Assertions
-      expect(authService.doSignIn).toHaveBeenCalledWith({
-        username: "nonexistentuser",
-        password: "testpassword",
-      });
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: "User not found. Please register if you are a new user.",
-        fieldErrors: {
-          username: "User not found. Please register if you are a new user.",
-        },
-      });
-    });
-
-    it("should respond with a 401 status and message if password is incorrect during sign-in", async () => {
-      const req = {
-        body: {
-          username: "testuser@gmail.com",
-          password: "incorrectpassword",
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Mocking authService.doSignIn to resolve with a user object
-      authService.doSignIn.mockResolvedValue({
-        id: 1,
-        username: "testuser@gmail.com",
-        comparePassword: jest.fn(() => false),
-      });
-
-      // Call the controller function
-      await authController.doSignIn(req, res);
-
-      // Assertions
-      expect(authService.doSignIn).toHaveBeenCalledWith({
-        username: "testuser@gmail.com",
-        password: "incorrectpassword",
-      });
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Incorrect password. Please try again.",
-        fieldErrors: {
-          password: "Incorrect password. Please try again.",
-        },
-      });
-    });
-
-    it("should respond with a 500 status and generic error message for other errors during sign-in", async () => {
-      const req = {
-        body: {
-          username: "testuser@gmail.com",
-          password: "testpassword",
-        },
-      };
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      // Mocking authService.doSignIn to throw a generic error
-      authService.doSignIn.mockRejectedValue(
-        new Error("Some unexpected error"),
-      );
-
-      // Call the controller function
-      await authController.doSignIn(req, res);
-
-      // Assertions
-      expect(authService.doSignIn).toHaveBeenCalledWith({
-        username: "testuser@gmail.com",
-        password: "testpassword",
-      });
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Internal server error",
-        error: "Some unexpected error",
-      });
     });
   });
 

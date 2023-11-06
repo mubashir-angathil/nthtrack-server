@@ -21,7 +21,6 @@ module.exports = {
         return { data };
       },
     };
-
     const formattedError = Object.create(formattedErrorPrototype);
 
     if (Sequelize.ValidationError) {

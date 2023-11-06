@@ -24,7 +24,15 @@ const sequelize = new Sequelize({
     consola.info(message.concat("\n"));
   },
 });
-
+const orderModel = [
+  "status",
+  "tracker",
+  "user",
+  "project",
+  "task",
+  "permission",
+  "member",
+];
 fs.readdirSync(__dirname)
   .filter(
     (file) =>
@@ -32,6 +40,10 @@ fs.readdirSync(__dirname)
       file !== basename &&
       file.slice(-3) === ".js" &&
       file.indexOf(".test.js") === -1,
+  )
+  .sort(
+    (a, b) =>
+      orderModel.indexOf(a.split(".")[0]) - orderModel.indexOf(b.split(".")[0]),
   )
   .forEach((file) => {
     const model = require(path.join(__dirname, file))(
@@ -42,7 +54,7 @@ fs.readdirSync(__dirname)
   });
 
 Object.keys(db).forEach((modelName) => {
-  consola.box(modelName);
+  consola.success({ message: `Synced models: ${modelName}`, badge: true });
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }

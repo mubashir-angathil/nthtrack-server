@@ -19,17 +19,17 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   // Insert seed data if not found
-  Tracker.sync({ force: false }).then(() => {
-    return Tracker.findOrCreate({
-      where: { name: "Bug" },
-      defaults: { name: "Bug" },
-    }).then(() => {
-      return Tracker.findOrCreate({
-        where: { name: "Feature" },
-        defaults: { name: "Feature" },
-      });
-    });
-  });
+  // Tracker.sync({ force: false }).then(() => {
+  //   return Tracker.findOrCreate({
+  //     where: { name: "Bug" },
+  //     defaults: { name: "Bug" },
+  //   }).then(() => {
+  //     return Tracker.findOrCreate({
+  //       where: { name: "Feature" },
+  //       defaults: { name: "Feature" },
+  //     });
+  //   });
+  // });
 
   return Tracker;
 };
