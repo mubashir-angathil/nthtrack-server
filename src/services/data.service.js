@@ -1,4 +1,5 @@
-const { Tracker, Status } = require("../models/sequelize.model");
+/* eslint-disable no-useless-catch */
+const { Tracker, Status, Member, User } = require("../models/sequelize.model");
 const { formatError } = require("../utils/helpers/helpers");
 
 module.exports = {
@@ -32,6 +33,40 @@ module.exports = {
       return statuses;
     } catch (error) {
       throw formatError(error);
+    }
+  },
+  getMemberTeams: async ({ userId }) => {
+    try {
+      const teams = await Member.findAll({
+        where: {
+          userId,
+        },
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "username"],
+          },
+        ],
+        attributes: ["id"],
+      });
+      // Use a Map to store unique users based on their IDs
+      const uniqueUsersMap = new Map();
+
+      // Iterate through teams and add unique users to the map
+      teams.forEach((team) => {
+        const user = team.user;
+
+        // Use user ID as the key in the Map to ensure uniqueness
+        uniqueUsersMap.set(user.id, user);
+      });
+
+      // Convert the Map values to an array
+      const uniqueUsersArray = Array.from(uniqueUsersMap.values());
+
+      return uniqueUsersArray;
+    } catch (error) {
+      throw error;
     }
   },
 };

@@ -49,4 +49,17 @@ module.exports = {
         .json({ success: false, message: "Error retrieving statuses.", error });
     }
   },
+  getMemberTeams: async (req, res, next) => {
+    const teams = await dataService.getMemberTeams({ userId: req.user.id });
+
+    if (!teams) {
+      return next({ success: false, message: "Failed to retrieve teams." });
+    }
+
+    return res.json({
+      success: true,
+      message: "Successfully retrieved teams",
+      data: teams,
+    });
+  },
 };

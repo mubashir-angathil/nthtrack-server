@@ -39,6 +39,7 @@ module.exports = (sequelize, DataTypes) => {
   Member.associate = (model) => {
     Member.belongsTo(model.User, {
       foreignKey: "userId",
+      as: "user",
     });
     Member.belongsTo(model.Project, {
       foreignKey: "projectId",
