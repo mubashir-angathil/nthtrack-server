@@ -3,13 +3,16 @@ const express = require("express");
 const router = express.Router();
 
 const projectController = require("../controllers/project.controller");
-const verifyToken = require("../middlewares/verifyToken.middleware");
+const {
+  verifyToken,
+  validatePermission,
+} = require("../middlewares/auth.middleware");
 const { tryCatch } = require("../utils/helpers/helpers");
 
 /**
  * Express route for creating a new project.
  * Requires a valid authentication token.
- * @name POST /api/project/create-project
+ * @name POST /api/project/create
  * @function
  * @memberof module:routes
  * @inner
@@ -17,11 +20,8 @@ const { tryCatch } = require("../utils/helpers/helpers");
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.post(
-  "/create-project",
-  verifyToken,
-  tryCatch(projectController.createProject),
-);
+
+router.post("/create", verifyToken, tryCatch(projectController.createProject));
 
 /**
  * Express route for updating an existing project.
@@ -35,8 +35,9 @@ router.post(
  * @param {Function} controller - Controller function to handle the request.
  */
 router.patch(
-  "/update-project",
+  "/update",
   verifyToken,
+  validatePermission("project.id"),
   tryCatch(projectController.updateProject),
 );
 
@@ -170,6 +171,31 @@ router.patch(
   "/task/close",
   verifyToken,
   tryCatch(projectController.closeTaskById),
+);
+
+router.post(
+  "/member/add",
+  verifyToken,
+  validatePermission("project.member.id"),
+  tryCatch(projectController.addMember),
+);
+
+// router.post(
+//   "/member/add",
+//   verifyToken,
+//   validatePermission("project.member.id"),
+//   tryCatch(projectController.addMember),
+// );
+
+router.post(
+  "/permission/create",
+  verifyToken,
+  tryCatch(projectController.createPermission),
+);
+router.patch(
+  "/permission/:permissionId/update",
+  verifyToken,
+  tryCatch(projectController.updatePermission),
 );
 
 module.exports = router;

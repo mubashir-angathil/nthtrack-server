@@ -7,6 +7,14 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
+      projectId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: sequelize.models.Project,
+          key: "id",
+        },
+      },
       permissionId: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -31,6 +39,10 @@ module.exports = (sequelize, DataTypes) => {
   Member.associate = (model) => {
     Member.belongsTo(model.User, {
       foreignKey: "userId",
+    });
+    Member.belongsTo(model.Project, {
+      foreignKey: "projectId",
+      as: "project",
     });
     Member.belongsTo(model.Permission, {
       foreignKey: "permissionId",

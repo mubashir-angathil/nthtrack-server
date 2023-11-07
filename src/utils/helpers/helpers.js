@@ -81,4 +81,16 @@ module.exports = {
       next(error);
     }
   },
+  isPathPermissionIncluded: async ({ permission, path, method }) => {
+    const keys = path.split(".");
+    let current = permission;
+    for (const key of keys) {
+      if (!current[key]) {
+        return false;
+      }
+
+      current = current[key];
+    }
+    return current[method === "PATCH" ? "PUT" : method] === true;
+  },
 };

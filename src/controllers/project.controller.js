@@ -1,6 +1,7 @@
 // Import necessary modules and services
 const projectService = require("../services/project.service");
 const { getCurrentPagination } = require("../utils/helpers/helpers");
+const { httpStatusCode } = require("../utils/constants/Constants");
 
 // Exported module containing various controllers for project and task management
 module.exports = {
@@ -12,13 +13,14 @@ module.exports = {
     const openStatus = await projectService.getStatus({ name: "opened" });
 
     if (!openStatus?.id) {
-      throw new Error("Status not found!");
+      next({ message: "Status not found!" });
     }
     // Call the project service to create a new project
     const project = await projectService.createProject({
       name,
       description,
       statusId: openStatus.id,
+      createdBy: req.user.id,
     });
 
     // Check if the project creation was successful
@@ -27,7 +29,7 @@ module.exports = {
     }
 
     // Respond with success and the created project data
-    return res.json({
+    return res.status(201).json({
       success: true,
       message: "Project created successfully.",
       data: project,
@@ -48,7 +50,7 @@ module.exports = {
 
     // Check if the project update was successful
     if (!updatedProject) {
-      next({ message: "Failed to update the project." });
+      return next({ message: "Failed to update the project." });
     }
 
     // Respond with success and information about the update
@@ -70,6 +72,7 @@ module.exports = {
       offset: currentPagination.offset,
       limit: currentPagination.limit,
       name,
+      userId: req.user.id,
     });
 
     // Check if project retrieval was successful
@@ -317,6 +320,78 @@ module.exports = {
     return res.status(200).json({
       success: true,
       message: "task closed successfully.",
+    });
+  },
+  addMember: async (req, res, next) => {
+    const { projectId, userId, permissionId } = req.body;
+
+    if (userId === req.user.id) {
+      return next({
+        message: "Admin cannot be added as a member",
+        httpCode: httpStatusCode.FORBIDDEN,
+      });
+    } else {
+      const isAdmin = await projectService.checkIsAdmin({
+        userId,
+        projectId,
+      });
+
+      if (isAdmin) {
+        return next({
+          message: "Admin cannot be added as a member",
+          httpCode: httpStatusCode.FORBIDDEN,
+        });
+      }
+    }
+    const [member, created] = await projectService.addMember({
+      projectId,
+      userId,
+      permissionId,
+    });
+
+    if (member && created) {
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Member creation successfully",
+      });
+    }
+
+    next({ message: "This user is already a member" });
+  },
+  createPermission: async (req, res, next) => {
+    const { name, json } = req.body;
+
+    const response = await projectService.createPermission({ name, json });
+
+    if (response) {
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Permission created successfully",
+      });
+    }
+    next({ message: "Permission creation failed" });
+  },
+  // Controller for updating an existing project
+  updatePermission: async (req, res, next) => {
+    const { name, json } = req.body;
+    const { permissionId } = req.params;
+
+    // Call the project service to update an existing project
+    const updatedPermission = await projectService.updatePermission({
+      name,
+      json,
+      permissionId,
+    });
+
+    // Check if the project update was successful
+    if (!updatedPermission) {
+      return next({ message: "Failed to update the permission." });
+    }
+    // Respond with success and information about the update
+    return res.json({
+      success: true,
+      message: "Successfully updated permission details.",
+      data: [{ updated: Boolean(updatedPermission) }],
     });
   },
 };

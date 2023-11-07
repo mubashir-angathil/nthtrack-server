@@ -4,6 +4,8 @@ const {
   Task,
   Status,
   Tracker,
+  Member,
+  Permission,
   sequelize,
 } = require("../models/sequelize.model");
 
@@ -18,13 +20,14 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to the created project.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  createProject: async ({ name, description, statusId }) => {
+  createProject: async ({ name, description, statusId, createdBy }) => {
     try {
       // Use Sequelize model to create a new project
       const newProject = await Project.create({
         name,
         description,
         statusId,
+        createdBy,
       });
       return newProject;
     } catch (error) {
@@ -67,7 +70,7 @@ module.exports = {
    * @returns {Promise<Array>} - A promise resolving to an array of projects.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  getAllProjects: async ({ offset, limit, name }) => {
+  getAllProjects: async ({ offset, limit, name, userId }) => {
     try {
       // Define a where clause based on the presence of name
       const whereClause = name
@@ -79,7 +82,7 @@ module.exports = {
         offset,
         limit,
         paranoid: false, // Include soft-deleted records
-        where: whereClause,
+        where: { ...whereClause, createdBy: userId },
         include: [
           {
             model: Status,
@@ -363,6 +366,80 @@ module.exports = {
         },
       });
       return status;
+    } catch (error) {
+      // Handle errors and format the error message
+      throw error;
+    }
+  },
+  addMember: async ({ projectId, userId, permissionId }) => {
+    try {
+      const response = await Member.findOrCreate({
+        where: { projectId, userId, permissionId },
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  createPermission: async ({ name, json }) => {
+    try {
+      const response = await Permission.create({ name, json });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  checkIsAdmin: async ({ userId, projectId }) => {
+    try {
+      const isAdmin = await Project.findOne({
+        where: {
+          id: projectId,
+          createdBy: userId,
+        },
+      });
+      return isAdmin;
+    } catch (error) {
+      throw error;
+    }
+  },
+  getPermission: async ({ projectId, userId }) => {
+    try {
+      const isAdmin = await Member.findOne({
+        where: {
+          projectId,
+          userId,
+        },
+        include: [
+          {
+            model: Permission,
+            as: "permission",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+        ],
+        attributes: {
+          exclude: ["createdAt", "updatedAt"],
+        },
+      });
+      return isAdmin;
+    } catch (error) {
+      throw error;
+    }
+  },
+  updatePermission: async ({ permissionId, name, json }) => {
+    try {
+      // Use Sequelize model to update an existing project
+      const [updatedProject] = await Permission.update(
+        {
+          name,
+          json,
+        },
+        {
+          where: { id: permissionId },
+        },
+      );
+      return updatedProject;
     } catch (error) {
       // Handle errors and format the error message
       throw error;
