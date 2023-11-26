@@ -6,7 +6,7 @@ const {
 } = require("../utils/helpers/jwt.helper");
 const { REFRESH_TOKEN_SECRET } = require("../configs/configs");
 const { httpStatusCode } = require("../utils/constants/Constants");
-const { ValidationError } = require("sequelize");
+const sequelize = require("sequelize");
 
 module.exports = {
   /**
@@ -18,15 +18,9 @@ module.exports = {
    * @returns {Object} - HTTP response with status and message.
    */
   doSignUp: async (req, res, next) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      next({ message: "Username or password is not provided" });
-    }
-
+    const { username, email, password } = req.body;
     // Call authService to create a new user
-    const user = await authService.doSignUp({ username, password });
-
+    const user = await authService.doSignUp({ username, email, password });
     if (!user) {
       return next({
         message: "Registration failed due to invalid input",
@@ -35,13 +29,22 @@ module.exports = {
 
     // Generate an access token and refresh token for the authenticated user
     const [accessToken, refreshToken] = await Promise.all([
-      generateAccessToken({ id: user.id, username: user.username }),
-      generateRefreshToken({ id: user.id, username: user.username }),
+      generateAccessToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
+      generateRefreshToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
     ]);
 
     const authDetails = {
       id: user.id,
       username,
+      email,
       accessToken,
       refreshToken,
     };
@@ -63,27 +66,22 @@ module.exports = {
    * @returns {Object} - HTTP response with status, message, and user details.
    */
   doSignIn: async (req, res, next) => {
-    const { username, password } = req.body;
-
-    // Check if username or password is not provided
-    if (!username || !password) {
-      return next({ message: "Username or password is not provided" });
-    }
+    const { usernameOrEmail, password } = req.body;
 
     // Find the user by username
-    const user = await authService.doSignIn({ username, password });
+    const user = await authService.doSignIn({ usernameOrEmail });
 
     // If user not found, respond with a 404 status
     if (!user) {
-      throw new ValidationError({
-        message: "User not found. Please register if you are a new user.",
-        errors: [
+      throw new sequelize.ValidationError(
+        "User not found. Please register if you are a new user.",
+        [
           {
-            path: "username",
+            path: "usernameOrEmail",
             message: "Username not found.",
           },
         ],
-      });
+      );
     }
 
     // Compare the entered password with the hashed password in the database
@@ -91,26 +89,35 @@ module.exports = {
 
     // If password is not valid, respond with a 401 status
     if (!isPasswordValid) {
-      throw new ValidationError({
-        message: "Incorrect password. Please try again.",
-        errors: [
+      throw new sequelize.ValidationError(
+        "Incorrect password. Please try again.",
+        [
           {
             path: "password",
             message: "Incorrect password",
           },
         ],
-      });
+      );
     }
 
     // Generate an access token and refresh token for the authenticated user
     const [accessToken, refreshToken] = await Promise.all([
-      generateAccessToken({ id: user.id, username: user.username }),
-      generateRefreshToken({ id: user.id, username: user.username }),
+      generateAccessToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
+      generateRefreshToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
     ]);
 
     const authDetails = {
       id: user.id,
-      username,
+      username: user.username,
+      email: user.email,
       accessToken,
       refreshToken,
     };

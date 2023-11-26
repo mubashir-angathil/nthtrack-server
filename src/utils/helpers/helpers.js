@@ -13,7 +13,7 @@ module.exports = {
           success: false,
           message: this.error.message || "Something went wrong",
           error: {
-            name: this.error.name || "Custom error",
+            name: this.error.name || "Error",
             query: this.error.sql,
             fieldErrors: this.error.fieldErrors,
           },
@@ -23,7 +23,7 @@ module.exports = {
     };
     const formattedError = Object.create(formattedErrorPrototype);
 
-    if (Sequelize.ValidationError) {
+    if (error instanceof Sequelize.ValidationError) {
       formattedError.error = {
         message: error.message,
         query: error,
@@ -41,6 +41,10 @@ module.exports = {
         });
       }
       return formattedError.getError();
+    } else {
+      formattedError.error = {
+        message: error.message,
+      };
     }
 
     return formattedError.getError();
@@ -92,5 +96,12 @@ module.exports = {
       current = current[key];
     }
     return current[method === "PATCH" ? "PUT" : method] === true;
+  },
+  isArrayUnique: (arr) => {
+    // Create a Set from the array, removing duplicates
+    const uniqueSet = new Set(arr);
+
+    // If the size of the Set is equal to the length of the array, all elements are unique
+    return uniqueSet.size === arr.length;
   },
 };

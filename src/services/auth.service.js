@@ -1,5 +1,6 @@
 /* eslint-disable no-useless-catch */
 const { User } = require("../models/sequelize.model");
+const { Op } = require("sequelize");
 
 module.exports = {
   /**
@@ -8,10 +9,9 @@ module.exports = {
    * @returns {Promise<Object>} - A Promise that resolves to the created user.
    * @throws {Error} - Throws an error if validation fails.
    */
-  doSignUp: async ({ username, password }) => {
+  doSignUp: async ({ username, email, password }) => {
     try {
-      const user = await User.create({ username, password });
-      return user;
+      return await User.create({ username, email, password });
     } catch (error) {
       throw error;
     }
@@ -23,10 +23,20 @@ module.exports = {
    * @returns {Promise<Object>} - A Promise that resolves to the found user.
    * @throws {Error} - Throws an error if validation fails.
    */
-  doSignIn: async ({ username }) => {
+  doSignIn: async ({ usernameOrEmail }) => {
     try {
-      const user = await User.findOne({ where: { username } });
-      return user;
+      return await User.findOne({
+        where: {
+          [Op.or]: [
+            {
+              username: usernameOrEmail,
+            },
+            {
+              email: usernameOrEmail,
+            },
+          ],
+        },
+      });
     } catch (error) {
       throw error;
     }

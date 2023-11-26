@@ -70,11 +70,13 @@ const validatePermission = (permissionKey) => {
         });
 
         if (!isPermitted) {
+          console.log("error");
           return next({
             message: "Not permitted",
             httpCode: httpStatusCode.FORBIDDEN,
           });
         }
+
         return next();
       } else {
         return next({

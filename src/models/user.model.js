@@ -10,13 +10,29 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      username: {
+      email: {
         type: DataTypes.STRING,
-        primaryKey: true,
         allowNull: false,
+        unique: {
+          msg: "email already existed",
+        },
         validate: {
           isEmail: {
             msg: "Please enter a valid email address.",
+          },
+        },
+      },
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: {
+          msg: "Username already taken",
+        },
+        validate: {
+          is: /^[a-zA-Z0-9_]+$/i,
+          len: {
+            args: [2, 15],
+            msg: "",
           },
         },
       },

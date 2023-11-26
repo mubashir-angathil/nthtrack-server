@@ -2,19 +2,31 @@
 const projectService = require("../services/project.service");
 const { getCurrentPagination } = require("../utils/helpers/helpers");
 const { httpStatusCode } = require("../utils/constants/Constants");
+const dataService = require("../services/data.service");
+const helpers = require("../utils/helpers/helpers");
 
 // Exported module containing various controllers for project and task management
 module.exports = {
-  // Controller for creating a new project
+  /**
+   * Controller for creating a new project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   createProject: async (req, res, next) => {
+    // Extract relevant information from the request body
     const { name, description } = req.body;
 
-    // Assuming "Opened" is the default status name
+    // Retrieve the default "Opened" status
     const openStatus = await projectService.getStatus({ name: "opened" });
 
+    // Check if the status was found
     if (!openStatus?.id) {
       next({ message: "Status not found!" });
     }
+
     // Call the project service to create a new project
     const project = await projectService.createProject({
       name,
@@ -36,8 +48,16 @@ module.exports = {
     });
   },
 
-  // Controller for updating an existing project
+  /**
+   * Controller for updating an existing project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   updateProject: async (req, res, next) => {
+    // Extract relevant information from the request body
     const { name, description, statusId, projectId } = req.body;
 
     // Call the project service to update an existing project
@@ -60,8 +80,14 @@ module.exports = {
       data: [{ updated: Boolean(updatedProject) }],
     });
   },
-
-  // Controller for retrieving all projects with pagination
+  /**
+   * Controller for retrieving all projects with pagination.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   getAllProjects: async (req, res, next) => {
     // Extract pagination parameters and project name from request query
     const { page, limit, name } = req.query;
@@ -89,7 +115,13 @@ module.exports = {
     });
   },
 
-  // Controller for retrieving a project by ID
+  /**
+   * Controller for retrieving a project by ID.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   getProjectById: async (req, res) => {
     try {
       // Extract project ID from request parameters
@@ -121,10 +153,17 @@ module.exports = {
     }
   },
 
-  // Controller for closing a project by ID
+  /**
+   * Controller for closing a project by ID.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   closeProjectById: async (req, res, next) => {
     // Extract project ID from request body
-    const { projectId } = req.body;
+    const { projectId } = req.params;
 
     // Check the count of open tasks related to the project
     const openTasksCount = await projectService.getOpenTasksCountByProjectId({
@@ -133,7 +172,7 @@ module.exports = {
 
     // If there are open tasks, prevent closing the project
     if (openTasksCount !== 0) {
-      next({
+      return next({
         httpCode: 400,
         message: "Cannot close the project with open tasks.",
       });
@@ -150,7 +189,7 @@ module.exports = {
 
     // Check if the project was successfully updated and closed
     if (!updatedProject || !closeProject) {
-      next({
+      return next({
         message: "Project not found or already closed.",
       });
     }
@@ -162,10 +201,17 @@ module.exports = {
     });
   },
 
-  // Controller for creating an task within a project
+  /**
+   * Controller for creating a task within a project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   createTask: async (req, res, next) => {
     const { projectId } = req.params;
-    const { trackerId, description } = req.body;
+    const { trackerId, description, assignees } = req.body;
 
     // Assuming "Opened" is the default status name
     const openStatus = await projectService.getStatus({ name: "opened" });
@@ -180,14 +226,37 @@ module.exports = {
       trackerId,
       projectId: parseInt(projectId),
       statusId: openStatus.id,
+      createdBy: req.user.id,
+      assignees,
     };
+
+    if (assignees?.length > 0) {
+      // Get project members
+      const projectMembers = await dataService.getProjectMembers({ projectId });
+      const memberIds = projectMembers.map((member) => member.id);
+
+      if (!helpers.isArrayUnique(assignees)) {
+        return next({
+          message: "Cannot assign task redundantly to a member",
+        });
+      }
+
+      if (!assignees.every((assignee) => memberIds.includes(assignee))) {
+        // Validate assignees against project members
+        return next({
+          message: "Some assignees not found in the project member list",
+        });
+      }
+    }
 
     // Call the project service to create a new task
     const task = await projectService.createTask(newTask);
 
     // Check if the task creation was successful
     if (!task) {
-      next({ message: "Failed to create an task." });
+      return next({
+        message: "Failed to create a task.",
+      });
     }
 
     // Respond with success and the created task data
@@ -198,14 +267,44 @@ module.exports = {
     });
   },
 
-  // Controller for updating an task within a project
+  /**
+   * Controller for updating a task within a project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   updateTask: async (req, res, next) => {
-    const { trackerId, description, taskId } = req.body;
+    const { trackerId, description, taskId, assignees } = req.body;
+
+    if (assignees?.length > 0) {
+      // Get project members
+      const projectMembers = await dataService.getProjectMembers({
+        projectId: req.params.projectId,
+      });
+      const memberIds = projectMembers.map((member) => member.id);
+
+      if (!helpers.isArrayUnique(assignees)) {
+        return next({
+          message: "Cannot assign task redundantly to a member",
+        });
+      }
+
+      if (!assignees.every((assignee) => memberIds.includes(assignee))) {
+        // Validate assignees against project members
+        return next({
+          message: "Some assignees not found in the project member list",
+        });
+      }
+    }
 
     // Call the project service to update an existing task
     const updatedTask = await projectService.updateTask({
       taskId,
       trackerId,
+      assignees,
+      updatedBy: req.user.id,
       description,
     });
 
@@ -222,7 +321,13 @@ module.exports = {
     });
   },
 
-  // Controller for retrieving all tasks within a project with pagination
+  /**
+   * Controller for retrieving all tasks within a project with pagination.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   getAllTasks: async (req, res) => {
     try {
       // Extract pagination parameters and other filters from request query
@@ -267,123 +372,53 @@ module.exports = {
     }
   },
 
-  // Controller for retrieving an task by ID within a project
-  getTaskById: async (req, res) => {
-    try {
-      // Extract task ID from request parameters
-      const { taskId } = req.params;
+  /**
+   * Controller for retrieving a task by ID within a project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  getTaskById: async (req, res, next) => {
+    // Extract task ID from request parameters
+    const { taskId } = req.params;
 
-      // Call the project service to retrieve an task by ID
-      const task = await projectService.getTaskById({ taskId });
+    // Call the project service to retrieve a task by ID
+    const task = await projectService.getTaskById({ taskId });
 
-      // Check if the task was found
-      if (!task) {
-        return res
-          .status(404)
-          .json({ success: false, message: "task not found." });
-      }
-
+    // Check if the task was found
+    if (task) {
       // Respond with success and the retrieved task
       return res.json({
         success: true,
         message: "Task retrieved successfully.",
         data: task,
       });
-    } catch (error) {
-      // Handle errors during task retrieval by ID
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error.", error });
     }
+
+    return next({ message: "Task not found." });
   },
-
-  // Controller for closing an task by ID within a project
-  closeTaskById: async (req, res, next) => {
-    // Extract task ID from request body
-    const { taskId } = req.body;
-
-    // Update the task status to closed
-    const updateTask = await projectService.updateTask({
-      taskId,
-      statusId: 2, // Assuming 2 represents the 'closed' status
-    });
-
-    // Close the task
-    const task = await projectService.closeTaskById({ taskId });
-
-    // Check if the task was successfully updated and closed
-    if (!updateTask || !task) {
-      next({ message: "task not found or already closed." });
-    }
-
-    // Respond with success message
-    return res.status(200).json({
-      success: true,
-      message: "task closed successfully.",
-    });
-  },
-  addMember: async (req, res, next) => {
-    const { projectId, userId, permissionId } = req.body;
-
-    if (userId === req.user.id) {
-      return next({
-        message: "Admin cannot be added as a member",
-        httpCode: httpStatusCode.FORBIDDEN,
-      });
-    } else {
-      const isAdmin = await projectService.checkIsAdmin({
-        userId,
-        projectId,
-      });
-
-      if (isAdmin) {
-        return next({
-          message: "Admin cannot be added as a member",
-          httpCode: httpStatusCode.FORBIDDEN,
-        });
-      }
-    }
-    const [member, created] = await projectService.addMember({
-      projectId,
-      userId,
-      permissionId,
-    });
-
-    if (member && created) {
-      return res.status(httpStatusCode.CREATED).json({
-        success: true,
-        message: "Member creation successfully",
-      });
-    }
-
-    next({ message: "This user is already a member" });
-  },
-  createPermission: async (req, res, next) => {
-    const { name, json } = req.body;
-
-    const response = await projectService.createPermission({ name, json });
-
-    if (response) {
-      return res.status(httpStatusCode.CREATED).json({
-        success: true,
-        message: "Permission created successfully",
-      });
-    }
-    next({ message: "Permission creation failed" });
-  },
-  // Controller for updating an existing project
+  /**
+   * Controller for updating a permission by ID.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
   updatePermission: async (req, res, next) => {
     const { name, json } = req.body;
     const { permissionId } = req.params;
 
-    // Call the project service to update an existing project
+    // Call the project service to update an existing permission
     const updatedPermission = await projectService.updatePermission({
       name,
       json,
       permissionId,
     });
 
-    // Check if the project update was successful
+    // Check if the permission update was successful
     if (!updatedPermission) {
       return next({ message: "Failed to update the permission." });
     }
@@ -393,5 +428,177 @@ module.exports = {
       message: "Successfully updated permission details.",
       data: [{ updated: Boolean(updatedPermission) }],
     });
+  },
+  /**
+   * Controller for retrieving team projects with pagination.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  getTeamProjects: async (req, res, next) => {
+    // Extract pagination parameters and project name from request query
+    const { page, limit, name } = req.query;
+    const currentPagination = getCurrentPagination({ page, limit });
+
+    // Call the project service to retrieve all projects
+    const projects = await projectService.getTeamProjects({
+      offset: currentPagination.offset,
+      limit: currentPagination.limit,
+      teamId: req.params.teamId,
+      userId: req.user.id,
+      name,
+    });
+
+    // Check if project retrieval was successful
+    if (!projects) {
+      throw next({ message: "Projects are empty." });
+    }
+
+    // Respond with success and the retrieved projects
+    return res.json({
+      success: true,
+      message: "Projects retrieved successfully.",
+      totalRows: projects.count,
+      data: projects.rows,
+    });
+  },
+  /**
+   * Controller for closing a task by ID within a project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  closeTaskById: async (req, res, next) => {
+    // Extract task ID from request parameters
+    const { taskId } = req.params;
+
+    // Retrieve the 'closed' status
+    const closedStatus = await projectService.getStatus({ name: "closed" });
+
+    if (!closedStatus?.id) {
+      return next({ message: "Status not found" });
+    }
+
+    // Update the task status to 'closed'
+    const isTaskUpdated = await projectService.updateTask({
+      taskId,
+      closedBy: req.user.id,
+      statusId: closedStatus.id,
+    });
+
+    // Check if the task was successfully updated and closed
+    if (!isTaskUpdated) {
+      return next({ message: "Task not updated" });
+    }
+
+    // Close the task
+    const isTaskClosed = await projectService.closeTaskById({ taskId });
+
+    // Check if the task was successfully closed
+    if (!isTaskClosed) {
+      return next({ message: "Task not found or already closed" });
+    }
+
+    // Respond with a success message
+    return res.status(200).json({
+      success: true,
+      message: "Task is closed successfully",
+    });
+  },
+  /**
+   * Adds a member to a project and sends a JSON response based on the success of the operation.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  addMember: async (req, res, next) => {
+    // Extract relevant information from the request body
+    const { projectId, userId, permissionId } = req.body;
+
+    // Check if the user being added is the admin (prevent adding admin as a member)
+    if (userId === req.user.id) {
+      throw next({
+        message: "Admin cannot be added as a member",
+        httpCode: httpStatusCode.FORBIDDEN,
+      });
+    }
+
+    // Retrieve the project by ID
+    const project = await projectService.getProjectById({ projectId });
+
+    // Check if the user being added is an admin of the project
+    const isAdmin = await project.checkIsAdmin(userId);
+
+    // If the user is an admin, prevent adding them as a member
+    if (isAdmin) {
+      throw next({
+        message: "Admin cannot be added as a member",
+        httpCode: httpStatusCode.FORBIDDEN,
+      });
+    }
+
+    // Retrieve the team ID associated with the project
+    const teamId = await project.getTeamId();
+
+    // If no team ID is found, indicate that the project was not found
+    if (!teamId) {
+      throw next({
+        message: "Project not found",
+        httpCode: httpStatusCode.BAD_REQUEST,
+      });
+    }
+
+    // Attempt to add the member to the project
+    const [member, created] = await projectService.addMember({
+      projectId,
+      userId,
+      teamId,
+      permissionId,
+    });
+
+    // Check if the member was successfully created
+    if (created && member) {
+      // Send a successful response if the member is created
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Member creation successfully",
+      });
+    }
+
+    // If the member is not created (likely already a member), send an error response
+    next({ message: "This user is already a member" });
+  },
+  /**
+   * Creates a new permission and sends a JSON response based on the success of the operation.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  createPermission: async (req, res, next) => {
+    // Extract relevant information from the request body
+    const { name, json } = req.body;
+
+    // Attempt to create a new permission using the project service
+    const response = await projectService.createPermission({ name, json });
+
+    // Check if the permission was successfully created
+    if (response) {
+      // Send a successful response if the permission is created
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Permission created successfully",
+      });
+    }
+
+    // If the permission is not created, send an error response
+    next({ message: "Permission creation failed" });
   },
 };

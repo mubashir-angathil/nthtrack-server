@@ -30,6 +30,5 @@ module.exports = (sequelize, DataTypes) => {
   //     });
   //   });
   // });
-
   return Tracker;
 };

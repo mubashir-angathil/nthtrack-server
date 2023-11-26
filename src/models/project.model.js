@@ -43,18 +43,38 @@ module.exports = (sequelize, DataTypes) => {
           key: "id",
         },
       },
+      updatedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+          model: sequelize.models.User,
+          key: "id",
+        },
+      },
+      closedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+          model: sequelize.models.User,
+          key: "id",
+        },
+      },
     },
     {
       // Other model options go here
       tableName: "projects",
       paranoid: true,
       timestamps: true,
+      updateAt: true,
       deletedAt: "closedAt",
     },
   );
 
   // Define associations
   Project.associate = (models) => {
+    // Project.sync({ alter: true });
     Project.belongsTo(models.Status, {
       foreignKey: "statusId",
       onDelete: "RESTRICT",
@@ -62,7 +82,18 @@ module.exports = (sequelize, DataTypes) => {
     });
     Project.belongsTo(models.User, {
       foreignKey: "createdBy",
-      onDelete: "RESTRICT",
+      as: "createdByUser",
+      onDelete: "CASCADE",
+    });
+    Project.belongsTo(models.User, {
+      foreignKey: "updatedBy",
+      as: "updatedByUser",
+      onDelete: "CASCADE",
+    });
+    Project.belongsTo(models.User, {
+      foreignKey: "closedBy",
+      as: "closedByUser",
+      onDelete: "CASCADE",
     });
     Project.hasMany(models.Task, {
       foreignKey: "projectId",
@@ -70,5 +101,15 @@ module.exports = (sequelize, DataTypes) => {
       as: "tasks",
     });
   };
+  // Check is user is admin
+  Project.prototype.checkIsAdmin = async function (userId) {
+    return userId === this.createdBy;
+  };
+
+  // Check is user is admin
+  Project.prototype.getTeamId = async function () {
+    return this.createdBy;
+  };
+
   return Project;
 };

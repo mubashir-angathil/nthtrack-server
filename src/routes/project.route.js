@@ -26,7 +26,7 @@ router.post("/create", verifyToken, tryCatch(projectController.createProject));
 /**
  * Express route for updating an existing project.
  * Requires a valid authentication token.
- * @name PATCH /api/project/update-project
+ * @name PATCH /api/project/update
  * @function
  * @memberof module:routes
  * @inner
@@ -68,6 +68,7 @@ router.get("/all", verifyToken, tryCatch(projectController.getAllProjects));
 router.get(
   "/:projectId",
   verifyToken,
+  validatePermission("project.id"),
   tryCatch(projectController.getProjectById),
 );
 
@@ -82,9 +83,10 @@ router.get(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch(
-  "/close",
+router.delete(
+  "/:projectId/close",
   verifyToken,
+  validatePermission("project.id"),
   tryCatch(projectController.closeProjectById),
 );
 
@@ -102,6 +104,7 @@ router.patch(
 router.post(
   "/:projectId/task/create",
   verifyToken,
+  validatePermission("project.task.id"),
   tryCatch(projectController.createTask),
 );
 
@@ -117,8 +120,9 @@ router.post(
  * @param {Function} controller - Controller function to handle the request.
  */
 router.patch(
-  "/update-task",
+  "/:projectId/task/update",
   verifyToken,
+  validatePermission("project.id"),
   tryCatch(projectController.updateTask),
 );
 
@@ -136,6 +140,7 @@ router.patch(
 router.get(
   "/:projectId/task/all",
   verifyToken,
+  validatePermission("project.task.all"),
   tryCatch(projectController.getAllTasks),
 );
 
@@ -151,8 +156,9 @@ router.get(
  * @param {Function} controller - Controller function to handle the request.
  */
 router.get(
-  "/task/:taskId",
+  "/:projectId/task/:taskId",
   verifyToken,
+  validatePermission("project.task.id"),
   tryCatch(projectController.getTaskById),
 );
 
@@ -167,9 +173,10 @@ router.get(
  * @param {Function} middleware - Middleware function to verify authentication token.
  * @param {Function} controller - Controller function to handle the request.
  */
-router.patch(
-  "/task/close",
+router.delete(
+  "/:projectId/task/:taskId/close",
   verifyToken,
+  validatePermission("project.task.id"),
   tryCatch(projectController.closeTaskById),
 );
 
@@ -180,13 +187,6 @@ router.post(
   tryCatch(projectController.addMember),
 );
 
-// router.post(
-//   "/member/add",
-//   verifyToken,
-//   validatePermission("project.member.id"),
-//   tryCatch(projectController.addMember),
-// );
-
 router.post(
   "/permission/create",
   verifyToken,
@@ -196,6 +196,11 @@ router.patch(
   "/permission/:permissionId/update",
   verifyToken,
   tryCatch(projectController.updatePermission),
+);
+router.get(
+  "/team/:teamId",
+  verifyToken,
+  tryCatch(projectController.getTeamProjects),
 );
 
 module.exports = router;

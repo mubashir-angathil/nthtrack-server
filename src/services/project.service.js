@@ -4,12 +4,14 @@ const {
   Task,
   Status,
   Tracker,
+  User,
   Member,
   Permission,
   sequelize,
 } = require("../models/sequelize.model");
 
 const { Op } = require("sequelize");
+const dataService = require("./data.service");
 
 // Exported module containing functions for project and task management
 module.exports = {
@@ -146,10 +148,9 @@ module.exports = {
   closeProjectById: async ({ projectId }) => {
     try {
       // Use Sequelize model to soft delete a project by setting deletedAt
-      const project = await Project.destroy({
+      return await Project.destroy({
         where: { id: projectId },
       });
-      return project;
     } catch (error) {
       // Handle errors and format the error message
       throw error;
@@ -181,13 +182,23 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to the updated task.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  updateTask: async ({ taskId, trackerId, description }) => {
+  updateTask: async ({
+    statusId,
+    taskId,
+    assignees,
+    updatedBy,
+    closedBy,
+    description,
+  }) => {
     try {
       // Use Sequelize model to update an existing task
-      const [updatedTask] = await Task.update(
+      const updatedTask = await Task.update(
         {
-          trackerId,
+          statusId,
           description,
+          updatedBy,
+          assignees,
+          closedBy,
         },
         {
           where: { id: taskId },
@@ -199,7 +210,6 @@ module.exports = {
       throw error;
     }
   },
-
   /**
    * Function to get all tasks within a project with optional filters and pagination.
    *
@@ -249,20 +259,48 @@ module.exports = {
               exclude: ["createdAt", "updatedAt"],
             },
           },
+          {
+            model: User,
+            as: "createdByUser",
+            attributes: ["id", "username", "email"],
+          },
+          {
+            model: User,
+            as: "updatedByUser",
+            attributes: ["id", "username", "email"],
+          },
+          {
+            model: User,
+            as: "closedByUser",
+            attributes: ["id", "username", "email"],
+          },
         ],
         order: [
           ["closedAt", "ASC"],
           ["id", "DESC"],
         ],
         attributes: {
-          exclude: ["statusId", "trackerId", "projectId"],
+          exclude: [
+            "createdBy",
+            "updatedBy",
+            "closedBy",
+            "statusId",
+            "trackerId",
+            "projectId",
+          ],
         },
         offset,
         limit,
         paranoid: false, // Include soft-deleted records
       });
 
+      // Map over tasks and get assignees for each task
+      await Promise.all(
+        tasks.rows.map(async (task) => dataService.getAssignees(task)),
+      );
+
       return tasks;
+      // console.log(tasks.rows[0]);
     } catch (error) {
       // Handle errors and format the error message
       throw error;
@@ -296,14 +334,36 @@ module.exports = {
               exclude: ["createdAt", "updatedAt"],
             },
           },
+          {
+            model: User,
+            as: "createdByUser",
+            attributes: ["id", "username", "email"],
+          },
+          {
+            model: User,
+            as: "updatedByUser",
+            attributes: ["id", "username", "email"],
+          },
+          {
+            model: User,
+            as: "closedByUser",
+            attributes: ["id", "username", "email"],
+          },
         ],
         attributes: {
-          exclude: ["projectId", "statusId", "trackerId"],
+          exclude: [
+            "createdBy",
+            "closedBy",
+            "updatedBy",
+            "projectId",
+            "statusId",
+            "trackerId",
+          ],
         },
       });
-      return task;
+
+      return await dataService.getAssignees(task);
     } catch (error) {
-      // Handle errors and format the error message
       throw error;
     }
   },
@@ -318,10 +378,9 @@ module.exports = {
   closeTaskById: async ({ taskId }) => {
     try {
       // Use Sequelize model to soft delete an task by setting deletedAt
-      const task = await Task.destroy({
+      return await Task.destroy({
         where: { id: taskId },
       });
-      return task;
     } catch (error) {
       // Handle errors and format the error message
       throw error;
@@ -371,16 +430,39 @@ module.exports = {
       throw error;
     }
   },
+  /**
+   * Add a member to a project or retrieve if already exists.
+   *
+   * @param {Object} param - Parameters for adding a member.
+   * @param {string} param.projectId - The ID of the project.
+   * @param {string} param.userId - The ID of the user.
+   * @param {string} param.permissionId - The ID of the permission.
+   * @returns {Promise<Array>} A promise that resolves with an array containing the member details.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
   addMember: async ({ projectId, userId, permissionId }) => {
     try {
-      const response = await Member.findOrCreate({
-        where: { projectId, userId, permissionId },
+      return Member.findOrCreate({
+        where: { projectId, userId },
+        defaults: {
+          projectId,
+          userId,
+          permissionId,
+        },
       });
-      return response;
     } catch (error) {
       throw error;
     }
   },
+  /**
+   * Create a new permission.
+   *
+   * @param {Object} param - Parameters for creating a permission.
+   * @param {string} param.name - The name of the permission.
+   * @param {string} param.json - The JSON representation of the permission.
+   * @returns {Promise<Object>} A promise that resolves with the created permission.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
   createPermission: async ({ name, json }) => {
     try {
       const response = await Permission.create({ name, json });
@@ -389,19 +471,39 @@ module.exports = {
       throw error;
     }
   },
+  /**
+   * Check if a user is an admin for a specific project.
+   *
+   * @param {Object} param - Parameters for checking admin status.
+   * @param {string} param.userId - The ID of the user.
+   * @param {string} param.projectId - The ID of the project.
+   * @returns {Promise<Object>} A promise that resolves with information about admin status.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
   checkIsAdmin: async ({ userId, projectId }) => {
     try {
       const isAdmin = await Project.findOne({
+        paranoid: false,
         where: {
           id: projectId,
           createdBy: userId,
         },
       });
+
       return isAdmin;
     } catch (error) {
       throw error;
     }
   },
+  /**
+   * Retrieve permission details for a user in a project.
+   *
+   * @param {Object} param - Parameters for retrieving permission details.
+   * @param {string} param.projectId - The ID of the project.
+   * @param {string} param.userId - The ID of the user.
+   * @returns {Promise<Object>} A promise that resolves with information about the user's permission.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
   getPermission: async ({ projectId, userId }) => {
     try {
       const isAdmin = await Member.findOne({
@@ -427,10 +529,20 @@ module.exports = {
       throw error;
     }
   },
+  /**
+   * Update permission details by ID.
+   *
+   * @param {Object} param - Parameters for updating permission details.
+   * @param {string} param.permissionId - The ID of the permission.
+   * @param {string} param.name - The new name for the permission.
+   * @param {string} param.json - The new JSON representation for the permission.
+   * @returns {Promise<number>} A promise that resolves with the number of updated permissions.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
   updatePermission: async ({ permissionId, name, json }) => {
     try {
-      // Use Sequelize model to update an existing project
-      const [updatedProject] = await Permission.update(
+      // Use Sequelize model to update an existing permission
+      const [updatedPermission] = await Permission.update(
         {
           name,
           json,
@@ -439,7 +551,72 @@ module.exports = {
           where: { id: permissionId },
         },
       );
-      return updatedProject;
+      return updatedPermission;
+    } catch (error) {
+      // Handle errors and format the error message
+      throw error;
+    }
+  },
+  /**
+   * Retrieve team projects with pagination.
+   *
+   * @param {Object} param - Parameters for retrieving team projects.
+   * @param {string} param.offset - The offset for pagination.
+   * @param {string} param.limit - The limit for pagination.
+   * @param {string} param.name - The name to filter projects.
+   * @param {string} param.teamId - The ID of the team.
+   * @param {string} param.userId - The ID of the user.
+   * @returns {Promise<Object>} A promise that resolves with information about team projects.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
+  getTeamProjects: async ({ offset, limit, name, teamId, userId }) => {
+    try {
+      // Define a where clause based on the presence of name
+      const whereClause = name
+        ? { name: { [Op.like]: `%${name}%` } }
+        : undefined;
+
+      // Use Sequelize model to retrieve all projects
+      const projects = await Project.findAndCountAll({
+        offset,
+        limit,
+        paranoid: false, // Include soft-deleted records
+        where: {
+          ...whereClause,
+          createdBy: teamId,
+          id: [
+            sequelize.literal(
+              `(SELECT projectId FROM members WHERE members.userId = ${userId})`,
+            ),
+          ],
+        },
+        include: [
+          {
+            model: Status,
+            as: "status",
+            attributes: {
+              exclude: ["createdAt", "updatedAt"],
+            },
+          },
+        ],
+        order: [
+          ["statusId", "ASC"],
+          ["createdAt", "DESC"],
+        ],
+        attributes: {
+          include: [
+            [
+              sequelize.literal(
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.statusId = 1)",
+              ),
+              "taskCount",
+            ],
+          ],
+          exclude: ["statusId"],
+        },
+      });
+
+      return projects;
     } catch (error) {
       // Handle errors and format the error message
       throw error;

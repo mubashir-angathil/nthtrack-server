@@ -40,15 +40,18 @@ module.exports = (sequelize, DataTypes) => {
     Member.belongsTo(model.User, {
       foreignKey: "userId",
       as: "user",
+      onDelete: "CASCADE",
     });
     Member.belongsTo(model.Project, {
       foreignKey: "projectId",
       as: "project",
+      onDelete: "CASCADE",
     });
     Member.belongsTo(model.Permission, {
       foreignKey: "permissionId",
       as: "permission",
     });
   };
+
   return Member;
 };
