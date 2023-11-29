@@ -19,6 +19,7 @@ router.get("/trackers", verifyToken, dataController.getTrackers);
  * GET /api/statuses
  */
 router.get("/statuses", verifyToken, dataController.getStatuses);
+router.post("/users", verifyToken, tryCatch(dataController.getUsers));
 
 router.get("/teams", verifyToken, tryCatch(dataController.getMemberTeams));
 router.get(

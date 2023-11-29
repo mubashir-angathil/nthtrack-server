@@ -1,4 +1,5 @@
 /* eslint-disable no-useless-catch */
+const { Op } = require("sequelize");
 const {
   Tracker,
   Status,
@@ -131,7 +132,7 @@ module.exports = {
       });
 
       // Use a Map to store unique users based on their IDs
-      const uniqueUsersMap = Map();
+      const uniqueUsersMap = new Map();
       // Iterate through members and add unique users to the map
       members.forEach((member) => {
         const user = member.user;
@@ -180,5 +181,26 @@ module.exports = {
 
     task.assignees = assignees; // Assign the array of assignees' user details to the task
     return task;
+  },
+  getUsers: async ({ offset, limit, searchKey }) => {
+    try {
+      const whereClause = searchKey
+        ? {
+            [Op.or]: [
+              { username: { [Op.like]: `%${searchKey}%` } },
+              { email: { [Op.like]: `%${searchKey}%` } },
+            ],
+          }
+        : undefined;
+
+      return await User.findAndCountAll({
+        offset,
+        limit,
+        attributes: ["id", "username", "email"],
+        where: whereClause,
+      });
+    } catch (error) {
+      throw formatError(error);
+    }
   },
 };

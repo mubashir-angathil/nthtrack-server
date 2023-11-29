@@ -1,5 +1,6 @@
 const dataService = require("../services/data.service");
 const projectService = require("../services/project.service");
+const { getCurrentPagination } = require("../utils/helpers/helpers");
 
 module.exports = {
   /**
@@ -166,5 +167,29 @@ module.exports = {
         data: permissions,
       });
     }
+  },
+  getUsers: async (req, res, next) => {
+    const { limit, page, searchKey } = req.body;
+
+    const pagination = getCurrentPagination({ page, limit });
+    // Retrieve list of statuses from the data service
+    const response = await dataService.getUsers({
+      limit: pagination.limit,
+      offset: pagination.offset,
+      searchKey,
+    });
+
+    // Check if the retrieval was successful
+    if (response) {
+      return res.status(200).json({
+        success: true,
+        message: "successfully retrieved users",
+        totalRows: response.count,
+        data: response.rows,
+      });
+    }
+
+    // If not successful, send an error response
+    return next({ message: "Failed to retrieve users." });
   },
 };

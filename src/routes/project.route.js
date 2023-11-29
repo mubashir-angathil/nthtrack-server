@@ -181,7 +181,7 @@ router.delete(
 );
 
 router.post(
-  "/member/add",
+  "/:projectId/member/add",
   verifyToken,
   validatePermission("project.member.id"),
   tryCatch(projectController.addMember),

@@ -519,7 +519,8 @@ module.exports = {
    */
   addMember: async (req, res, next) => {
     // Extract relevant information from the request body
-    const { projectId, userId, permissionId } = req.body;
+    const { userId, permissionId } = req.body;
+    const { projectId } = req.params;
 
     // Check if the user being added is the admin (prevent adding admin as a member)
     if (userId === req.user.id) {
