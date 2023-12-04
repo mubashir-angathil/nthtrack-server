@@ -1,4 +1,6 @@
 const { Sequelize } = require("../../models/sequelize.model");
+const projectService = require("../../services/project.service");
+const { httpStatusCode } = require("../constants/Constants");
 
 module.exports = {
   /**
@@ -103,5 +105,41 @@ module.exports = {
 
     // If the size of the Set is equal to the length of the array, all elements are unique
     return uniqueSet.size === arr.length;
+  },
+  validateIsUserAddAsSuperAdmin: async ({
+    projectId,
+    userId,
+    permissionId,
+    next,
+  }) => {
+    // Retrieve the project by ID
+    const project = await projectService.getProjectById({ projectId });
+
+    // Check if the user being added is an admin of the project
+    const isAdmin = await project.checkIsAdmin(userId);
+
+    // Retrieve the "Super Admin" permission
+    const superAdminPermission = await projectService.getPermissionByName({
+      permission: "Super Admin",
+    });
+
+    // If the user is an admin but not adding as super admin, disallow the operation
+    if (isAdmin && superAdminPermission.id !== permissionId) {
+      throw next({
+        message: "This user is an admin of the project! Add as a super admin.",
+        httpCode: httpStatusCode.BAD_REQUEST,
+      });
+    }
+
+    // If the user is not an admin and adding as super admin, disallow the operation
+    if (!isAdmin && superAdminPermission.id === permissionId) {
+      throw next({
+        message: "Can't add multiple super admins",
+        httpCode: httpStatusCode.BAD_REQUEST,
+      });
+    }
+
+    // Return the project if validation is successful
+    return project;
   },
 };

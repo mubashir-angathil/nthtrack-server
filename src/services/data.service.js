@@ -9,7 +9,6 @@ const {
   Permission,
 } = require("../models/sequelize.model");
 const { formatError } = require("../utils/helpers/helpers");
-
 module.exports = {
   /**
    * Retrieves a list of tracker from the database.
@@ -133,13 +132,13 @@ module.exports = {
 
       // Use a Map to store unique users based on their IDs
       const uniqueUsersMap = new Map();
+
       // Iterate through members and add unique users to the map
       members.forEach((member) => {
         const user = member.user;
         // Use user ID as the key in the Map to ensure uniqueness
         uniqueUsersMap.set(user.id, user);
       });
-
       // Convert the Map values to an array
       const uniqueUsersArray = Array.from(uniqueUsersMap.values());
 

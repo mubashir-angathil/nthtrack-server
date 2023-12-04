@@ -31,6 +31,21 @@ module.exports = {
         statusId,
         createdBy,
       });
+
+      const adminPermission = await module.exports.getPermissionByName({
+        permission: "Super Admin",
+      });
+
+      if (adminPermission.id) {
+        await module.exports.addMember({
+          projectId: newProject.id,
+          userId: createdBy,
+          permissionId: adminPermission.id,
+        });
+      } else {
+        throw new Error("Permission generation failed");
+      }
+
       return newProject;
     } catch (error) {
       // Handle errors and format the error message
@@ -455,6 +470,40 @@ module.exports = {
     }
   },
   /**
+   * Update member to a project or retrieve if already exists.
+   *
+   * @param {Object} param - Parameters for adding a member.
+   * @param {string} param.projectId - The ID of the project.
+   * @param {string} param.userId - The ID of the user.
+   * @param {string} param.permissionId - The ID of the permission.
+   * @returns {Promise<Array>} A promise that resolves with an array containing the member details.
+   * @throws Will throw an error if there's an issue with the operation.
+   */
+  updateMember: async ({ projectId, memberId, permissionId }) => {
+    try {
+      const response = await Member.update(
+        {
+          permissionId,
+        },
+        {
+          where: { id: memberId, projectId },
+        },
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  removeMember: async ({ projectId, memberId }) => {
+    try {
+      return await Member.destroy({
+        where: { id: memberId, projectId },
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+  /**
    * Create a new permission.
    *
    * @param {Object} param - Parameters for creating a permission.
@@ -525,6 +574,14 @@ module.exports = {
         },
       });
       return isAdmin;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getPermissionByName: async ({ permission }) => {
+    try {
+      return await Permission.findOne({ where: { name: permission } });
     } catch (error) {
       throw error;
     }
@@ -619,6 +676,34 @@ module.exports = {
       return projects;
     } catch (error) {
       // Handle errors and format the error message
+      throw error;
+    }
+  },
+  getProjectMembers: async ({ projectId, limit, offset }) => {
+    try {
+      return await Member.findAndCountAll({
+        limit,
+        offset,
+        where: {
+          projectId,
+        },
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: {
+              exclude: ["password", "createdAt", "updatedAt"],
+            },
+          },
+          {
+            model: Permission,
+            as: "permission",
+            attributes: ["id", "name"],
+          },
+        ],
+        attributes: ["id", "createdAt", "updatedAt"],
+      });
+    } catch (error) {
       throw error;
     }
   },

@@ -186,6 +186,18 @@ router.post(
   validatePermission("project.member.id"),
   tryCatch(projectController.addMember),
 );
+router.put(
+  "/:projectId/member/update",
+  verifyToken,
+  validatePermission("project.member.id"),
+  tryCatch(projectController.updateMember),
+);
+router.delete(
+  "/:projectId/member/:memberId/delete",
+  verifyToken,
+  validatePermission("project.member.id"),
+  tryCatch(projectController.removeMember),
+);
 
 router.post(
   "/permission/create",
@@ -201,6 +213,11 @@ router.get(
   "/team/:teamId",
   verifyToken,
   tryCatch(projectController.getTeamProjects),
+);
+router.post(
+  "/:projectId/members",
+  verifyToken,
+  tryCatch(projectController.getProjectMembers),
 );
 
 module.exports = router;

@@ -518,31 +518,16 @@ module.exports = {
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
   addMember: async (req, res, next) => {
-    // Extract relevant information from the request body
+    // Extract relevant information from the request body and params
     const { userId, permissionId } = req.body;
     const { projectId } = req.params;
 
-    // Check if the user being added is the admin (prevent adding admin as a member)
-    if (userId === req.user.id) {
-      throw next({
-        message: "Admin cannot be added as a member",
-        httpCode: httpStatusCode.FORBIDDEN,
-      });
-    }
-
-    // Retrieve the project by ID
-    const project = await projectService.getProjectById({ projectId });
-
-    // Check if the user being added is an admin of the project
-    const isAdmin = await project.checkIsAdmin(userId);
-
-    // If the user is an admin, prevent adding them as a member
-    if (isAdmin) {
-      throw next({
-        message: "Admin cannot be added as a member",
-        httpCode: httpStatusCode.FORBIDDEN,
-      });
-    }
+    const project = await helpers.validateIsUserAddAsSuperAdmin({
+      next,
+      permissionId,
+      projectId,
+      userId,
+    });
 
     // Retrieve the team ID associated with the project
     const teamId = await project.getTeamId();
@@ -568,12 +553,84 @@ module.exports = {
       // Send a successful response if the member is created
       return res.status(httpStatusCode.CREATED).json({
         success: true,
-        message: "Member creation successfully",
+        message: "Member creation successful",
       });
     }
 
     // If the member is not created (likely already a member), send an error response
-    next({ message: "This user is already a member" });
+    throw next({ message: "This user is already a member" });
+  },
+  /**
+   * Updates  member to a project and sends a JSON response based on the success of the operation.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  updateMember: async (req, res, next) => {
+    const { memberId, userId, permissionId } = req.body;
+    const { projectId } = req.params;
+
+    await helpers.validateIsUserAddAsSuperAdmin({
+      next,
+      permissionId,
+      projectId,
+      userId,
+    });
+
+    const response = await projectService.updateMember({
+      projectId,
+      memberId,
+      permissionId,
+    });
+
+    if (response) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Successfully updated member permission",
+      });
+    }
+
+    next({ message: "Member updates failed" });
+  },
+  /**
+   * Remove  member from  project.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  removeMember: async (req, res, next) => {
+    const { projectId, memberId } = req.params;
+    const { userId } = req.query;
+    // Retrieve the project by ID
+    const project = await projectService.getProjectById({ projectId });
+
+    // Check if the user being added is an admin of the project
+    const isAdmin = await project.checkIsAdmin(parseInt(userId));
+    // If the user is an admin, prevent adding them as a member
+    if (isAdmin) {
+      throw next({
+        message: "Super admin permission can't be remove",
+        httpCode: httpStatusCode.BAD_REQUEST,
+      });
+    }
+
+    const response = await projectService.removeMember({
+      projectId,
+      memberId,
+    });
+
+    if (response) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Successfully removed member from project",
+      });
+    }
+
+    next({ message: "Failed to remove member from the project" });
   },
   /**
    * Creates a new permission and sends a JSON response based on the success of the operation.
@@ -601,5 +658,27 @@ module.exports = {
 
     // If the permission is not created, send an error response
     next({ message: "Permission creation failed" });
+  },
+  getProjectMembers: async (req, res, next) => {
+    const { limit, page } = req.body;
+    const { projectId } = req.params;
+
+    const pagination = helpers.getCurrentPagination({ page, limit, projectId });
+
+    const members = await projectService.getProjectMembers({
+      limit: pagination.limit,
+      offset: pagination.offset,
+      projectId,
+    });
+    if (members) {
+      return res.status(200).json({
+        success: true,
+        totalRows: members.count,
+        message: "Retrieved project members successfully",
+        data: members.rows,
+      });
+    }
+
+    next({ message: "Failed to find project members" });
   },
 };

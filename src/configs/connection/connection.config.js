@@ -6,7 +6,7 @@ const configs = require("../configs");
 // Initialize database connection
 module.exports = async () => {
   try {
-    await database.sequelize.sync({ alter: true });
+    await database.sequelize.sync();
     consola.success({
       message: `✅ Database synced successfully (${configs.DATABASE})`,
       badge: true,
