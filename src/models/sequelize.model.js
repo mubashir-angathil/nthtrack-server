@@ -21,7 +21,7 @@ const sequelize = new Sequelize({
   username: DATABASE_USER_NAME,
   password: DATABASE_PASSWORD,
   logging: (message) => {
-    consola.info(message.concat("\n"));
+    // consola.info(message.concat("\n"));
   },
 });
 const orderModel = [
@@ -32,6 +32,7 @@ const orderModel = [
   "task",
   "permission",
   "member",
+  "notification",
 ];
 fs.readdirSync(__dirname)
   .filter(

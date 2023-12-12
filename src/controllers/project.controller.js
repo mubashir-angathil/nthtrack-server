@@ -4,7 +4,6 @@ const { getCurrentPagination } = require("../utils/helpers/helpers");
 const { httpStatusCode } = require("../utils/constants/Constants");
 const dataService = require("../services/data.service");
 const helpers = require("../utils/helpers/helpers");
-
 // Exported module containing various controllers for project and task management
 module.exports = {
   /**
@@ -74,7 +73,7 @@ module.exports = {
     }
 
     // Respond with success and information about the update
-    return res.json({
+    res.json({
       success: true,
       message: "Successfully updated project details.",
       data: [{ updated: Boolean(updatedProject) }],
@@ -399,6 +398,7 @@ module.exports = {
 
     return next({ message: "Task not found." });
   },
+
   /**
    * Controller for updating a permission by ID.
    *
@@ -429,6 +429,7 @@ module.exports = {
       data: [{ updated: Boolean(updatedPermission) }],
     });
   },
+
   /**
    * Controller for retrieving team projects with pagination.
    *
@@ -464,6 +465,7 @@ module.exports = {
       data: projects.rows,
     });
   },
+
   /**
    * Controller for closing a task by ID within a project.
    *
@@ -509,6 +511,7 @@ module.exports = {
       message: "Task is closed successfully",
     });
   },
+
   /**
    * Adds a member to a project and sends a JSON response based on the success of the operation.
    *
@@ -560,6 +563,7 @@ module.exports = {
     // If the member is not created (likely already a member), send an error response
     throw next({ message: "This user is already a member" });
   },
+
   /**
    * Updates  member to a project and sends a JSON response based on the success of the operation.
    *
@@ -594,6 +598,7 @@ module.exports = {
 
     next({ message: "Member updates failed" });
   },
+
   /**
    * Remove  member from  project.
    *
@@ -632,6 +637,7 @@ module.exports = {
 
     next({ message: "Failed to remove member from the project" });
   },
+
   /**
    * Creates a new permission and sends a JSON response based on the success of the operation.
    *
@@ -659,26 +665,69 @@ module.exports = {
     // If the permission is not created, send an error response
     next({ message: "Permission creation failed" });
   },
+
+  /**
+   * Retrieves project members with pagination.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
   getProjectMembers: async (req, res, next) => {
+    // Extract pagination parameters and project ID from request
     const { limit, page } = req.body;
     const { projectId } = req.params;
 
+    // Calculate pagination details
     const pagination = helpers.getCurrentPagination({ page, limit, projectId });
 
+    // Retrieve project members with pagination
     const members = await projectService.getProjectMembers({
       limit: pagination.limit,
       offset: pagination.offset,
       projectId,
     });
+
+    // Send a success response with retrieved project members
     if (members) {
       return res.status(200).json({
         success: true,
         totalRows: members.count,
-        message: "Retrieved project members successfully",
+        message: "Retrieved project members successfully.",
         data: members.rows,
       });
     }
 
-    next({ message: "Failed to find project members" });
+    // If members are not found, trigger the error handler
+    next({ message: "Failed to find project members." });
+  },
+
+  /**
+   * Marks notifications as read for the authenticated user.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  markNotificationAsRead: async (req, res, next) => {
+    // Extract notificationIds from the request body
+    const { notificationIds } = req.body;
+
+    // Call the service to update notifications as read
+    const markAsRead = await projectService.updateNotification({
+      notificationIds,
+      userId: req.user.id,
+    });
+
+    // Send a success response if notifications are marked as read
+    if (markAsRead) {
+      return res.status(200).json({
+        success: true,
+        message: "Notifications marked as read successfully.",
+      });
+    }
+
+    // If marking as read fails, trigger the error handler
+    next({ message: "Failed to mark notifications as read." });
   },
 };

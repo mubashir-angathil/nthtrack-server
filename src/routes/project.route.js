@@ -220,4 +220,9 @@ router.post(
   tryCatch(projectController.getProjectMembers),
 );
 
+router.patch(
+  "/notification/all/mark-as-read",
+  verifyToken,
+  tryCatch(projectController.markNotificationAsRead),
+);
 module.exports = router;

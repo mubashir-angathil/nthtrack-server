@@ -1,5 +1,6 @@
 const dataService = require("../services/data.service");
 const projectService = require("../services/project.service");
+const helpers = require("../utils/helpers/helpers");
 const { getCurrentPagination } = require("../utils/helpers/helpers");
 
 module.exports = {
@@ -32,6 +33,7 @@ module.exports = {
         .json({ success: false, message: "Error retrieving trackers.", error });
     }
   },
+
   /**
    * Retrieves a list of status and sends a JSON response based on the success of the operation.
    *
@@ -61,6 +63,7 @@ module.exports = {
         .json({ success: false, message: "Error retrieving statuses.", error });
     }
   },
+
   /**
    * Retrieves teams associated with a member and sends a JSON response based on the success of the operation.
    *
@@ -86,6 +89,7 @@ module.exports = {
       data: teams,
     });
   },
+
   /**
    * Retrieves members of a project and sends a JSON response based on the success of the operation.
    *
@@ -113,6 +117,7 @@ module.exports = {
       data: members,
     });
   },
+
   /**
    * Retrieves assignees of a task and sends a JSON response based on the success of the operation.
    *
@@ -146,6 +151,7 @@ module.exports = {
       data: users,
     });
   },
+
   /**
    * Retrieves permissions and sends a JSON response based on the success of the operation.
    *
@@ -168,28 +174,97 @@ module.exports = {
       });
     }
   },
+
+  /**
+   * Retrieves users with optional pagination and search functionality.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
   getUsers: async (req, res, next) => {
+    // Extract parameters from the request body
     const { limit, page, searchKey } = req.body;
 
+    // Calculate pagination based on provided limit and page
     const pagination = getCurrentPagination({ page, limit });
-    // Retrieve list of statuses from the data service
+
+    // Retrieve users based on the provided parameters
     const response = await dataService.getUsers({
       limit: pagination.limit,
       offset: pagination.offset,
       searchKey,
     });
 
-    // Check if the retrieval was successful
+    // Check if users were successfully retrieved
     if (response) {
+      // Send a success response with user data and pagination information
       return res.status(200).json({
         success: true,
-        message: "successfully retrieved users",
+        message: "Successfully retrieved users.",
         totalRows: response.count,
         data: response.rows,
       });
     }
 
-    // If not successful, send an error response
+    // If retrieval fails, call the next middleware with an error message
     return next({ message: "Failed to retrieve users." });
+  },
+
+  /**
+   * Retrieves notifications based on roomIds, user ID, pagination parameters.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  getNotifications: async (req, res, next) => {
+    // Extract parameters from the query string
+    const { roomIds, page, limit } = req.query;
+
+    // Calculate pagination based on provided page and limit
+    const pagination = await helpers.getCurrentPagination({ page, limit });
+
+    // Retrieve notifications based on parameters
+    const notifications = await dataService.getNotifications({
+      roomIds: roomIds.split(","), // Assuming roomIds are comma-separated values
+      userId: req.user.id, // Assuming user ID is stored in req.user
+      offset: pagination.offset,
+      limit: pagination.limit,
+    });
+
+    // Check if notifications were successfully retrieved
+    if (!notifications) {
+      // If notifications are empty, throw an error to be handled by the error middleware
+      throw next({ message: "Notifications are empty." });
+    }
+
+    // Send a success response with notification data and pagination information
+    return res.status(200).json({
+      success: true,
+      message: "Notifications retrieved successfully.",
+      data: notifications.rows,
+      totalRows: notifications.count,
+    });
+  },
+
+  /**
+   * Retrieves project IDs in which the user is enrolled.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  getEnrolledProjectIds: async (req, res) => {
+    // Retrieve enrolled project IDs for the user
+    const projectIds = await dataService.getEnrolledProjectIds({
+      userId: req.user.id, // Assuming user ID is stored in req.user
+    });
+
+    // Send a success response with retrieved project IDs
+    return res.status(200).json({
+      success: true,
+      message: "Project IDs retrieved successfully.",
+      data: projectIds,
+    });
   },
 };

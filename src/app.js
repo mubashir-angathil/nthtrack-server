@@ -1,11 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const authRoute = require("./routes/auth.route");
-const projectRoute = require("./routes/project.route");
-const dataRoute = require("./routes/data.route");
+const authRoutes = require("./routes/auth.route");
+const projectRoutes = require("./routes/project.route");
+const dataRoutes = require("./routes/data.route");
 const { errorHandler } = require("./middlewares/errorHandler.middleware");
+const scheduledTasks = require("./schedules");
 
-// Assign express
+// Initialize express app
 const app = express();
 
 // Parse incoming JSON requests
@@ -14,10 +15,19 @@ app.use(express.json());
 // Enable CORS for all routes
 app.use(cors());
 
-// Route initialization
-app.use("/auth", authRoute); // Mount authRoute under /auth
-app.use("/project", projectRoute); // Mount projectRoute under /project
-app.use("/data", dataRoute); // Mount dataRoute under /data
+// Mount authentication routes under /auth
+app.use("/auth", authRoutes);
 
+// Mount project-related routes under /project
+app.use("/project", projectRoutes);
+
+// Mount data-related routes under /data
+app.use("/data", dataRoutes);
+
+// Handle errors globally with the errorHandler middleware
 app.use(errorHandler);
+
+// Start scheduled tasks
+scheduledTasks();
+
 module.exports = app;

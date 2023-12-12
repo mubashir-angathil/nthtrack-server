@@ -24,8 +24,10 @@
     "jsonwebtoken": "^9.0.2",
     "lint-staged": "^14.0.1",
     "mysql2": "^3.6.1",
+    "node-schedule": "^2.1.1",
     "sequelize": "^6.33.0",
-    "sequelize-cli": "^6.6.1"
+    "sequelize-cli": "^6.6.1",
+    "socket.io": "^4.7.2"
   },
   "devDependencies": {
     "eslint": "^8.50.0",

@@ -2,16 +2,24 @@ const app = require("./app");
 const configs = require("./configs/configs");
 const syncDatabase = require("./configs/connection/connection.config");
 const { consola } = require("consola");
+const http = require("http");
+const socketServer = require("./socket/socket");
 
 const startServer = async () => {
   try {
+    const PORT = configs.PORT;
+
+    // Set up server
+    const httpServer = http.createServer(app);
+
     // Sync database
     await syncDatabase();
 
-    const PORT = configs.PORT;
+    // Attach the Socket.IO server to the HTTP server
+    socketServer.attach(httpServer);
 
     // Listening app
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       consola.success({
         message: `🚀 Server started on port ${PORT} !!`,
         badge: true,

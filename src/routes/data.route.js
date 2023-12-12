@@ -39,4 +39,15 @@ router.get(
   validatePermission("project.member.all"),
   tryCatch(dataController.getTaskAssignees),
 );
+router.get(
+  "/user/notifications",
+  verifyToken,
+  tryCatch(dataController.getNotifications),
+);
+router.get(
+  "/team/project/all",
+  verifyToken,
+  tryCatch(dataController.getEnrolledProjectIds),
+);
+
 module.exports = router;

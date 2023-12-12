@@ -81,6 +81,7 @@ module.exports = (sequelize, DataTypes) => {
   Task.associate = (models) => {
     Task.belongsTo(models.Project, {
       foreignKey: "projectId",
+      as: "project",
       onDelete: "RESTRICT",
     });
     Task.belongsTo(models.User, {

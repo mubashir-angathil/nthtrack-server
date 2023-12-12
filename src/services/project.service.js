@@ -8,6 +8,7 @@ const {
   Member,
   Permission,
   sequelize,
+  Notification,
 } = require("../models/sequelize.model");
 
 const { Op } = require("sequelize");
@@ -225,6 +226,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Function to get all tasks within a project with optional filters and pagination.
    *
@@ -424,6 +426,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Function to get the status.
    *
@@ -445,6 +448,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Add a member to a project or retrieve if already exists.
    *
@@ -469,6 +473,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Update member to a project or retrieve if already exists.
    *
@@ -494,15 +499,30 @@ module.exports = {
       throw error;
     }
   },
+
+  /**
+   * Removes a member from a project.
+   * @param {Object} options - The options object.
+   * @param {number} options.projectId - The ID of the project from which to remove the member.
+   * @param {number} options.memberId - The ID of the member to be removed.
+   * @returns {Promise<number>} - A promise resolving to the number of affected rows (0 or 1).
+   * @throws {Error} - Throws an error if the removal fails.
+   */
   removeMember: async ({ projectId, memberId }) => {
     try {
-      return await Member.destroy({
+      // Use Sequelize's destroy method to remove a member from a project
+      const removedRowsCount = await Member.destroy({
         where: { id: memberId, projectId },
       });
+
+      // Return the number of affected rows (0 or 1)
+      return removedRowsCount;
     } catch (error) {
+      // If an error occurs during the removal process, throw the error
       throw error;
     }
   },
+
   /**
    * Create a new permission.
    *
@@ -520,6 +540,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Check if a user is an admin for a specific project.
    *
@@ -544,6 +565,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Retrieve permission details for a user in a project.
    *
@@ -579,13 +601,28 @@ module.exports = {
     }
   },
 
+  /**
+   * Retrieves a permission by its name.
+   * @param {Object} options - The options object.
+   * @param {string} options.permission - The name of the permission to retrieve.
+   * @returns {Promise<Permission | null>} - A promise resolving to the retrieved permission or null if not found.
+   * @throws {Error} - Throws an error if the retrieval fails.
+   */
   getPermissionByName: async ({ permission }) => {
     try {
-      return await Permission.findOne({ where: { name: permission } });
+      // Use Sequelize's findOne method to retrieve a permission by its name
+      const retrievedPermission = await Permission.findOne({
+        where: { name: permission },
+      });
+
+      // Return the retrieved permission or null if not found
+      return retrievedPermission;
     } catch (error) {
+      // If an error occurs during the retrieval process, throw the error
       throw error;
     }
   },
+
   /**
    * Update permission details by ID.
    *
@@ -614,6 +651,7 @@ module.exports = {
       throw error;
     }
   },
+
   /**
    * Retrieve team projects with pagination.
    *
@@ -679,9 +717,17 @@ module.exports = {
       throw error;
     }
   },
+
+  /**
+   * Retrieves project members with their user details and permissions.
+   * @param {Object} options - Object containing projectId, limit, and offset.
+   * @returns {Promise<Object>} - A promise resolving to an object with the count and rows of project members.
+   * @throws {Error} - Throws an error if an operation fails.
+   */
   getProjectMembers: async ({ projectId, limit, offset }) => {
     try {
-      return await Member.findAndCountAll({
+      // Use Sequelize's findAndCountAll to get project members with user details and permissions
+      const members = await Member.findAndCountAll({
         limit,
         offset,
         where: {
@@ -703,7 +749,92 @@ module.exports = {
         ],
         attributes: ["id", "createdAt", "updatedAt"],
       });
+
+      // Return the object with count and rows of project members
+      return members;
     } catch (error) {
+      // If an error occurs, throw the error
+      throw error;
+    }
+  },
+
+  /**
+   * Creates a new notification in the database.
+   * @param {Object} options - Object containing message, broadcastId, and createdBy.
+   * @returns {Promise<Object>} - A promise resolving to the created notification.
+   * @throws {Error} - Throws an error if the creation fails.
+   */
+  createNotification: async ({ message, broadcastId, createdBy }) => {
+    try {
+      // Use Sequelize's create method to add a new notification to the database
+      const notification = await Notification.create({
+        message,
+        broadcastId,
+        readers: [createdBy], // Initialize readers array with createdBy user ID
+      });
+
+      // Return the created notification
+      return notification;
+    } catch (error) {
+      // If an error occurs during the creation process, throw the error
+      throw error;
+    }
+  },
+
+  /**
+   * Updates the readers of specified notifications by appending a new user ID.
+   * @param {Object} options - Object containing notificationIds and userId.
+   * @returns {Promise<Array>} - A promise resolving to an array of updated notifications.
+   * @throws {Error} - Throws an error if the update fails.
+   */
+  updateNotification: async ({ notificationIds, userId }) => {
+    try {
+      // Use Sequelize's update method to modify the readers of specified notifications
+      const updatedNotifications = await Notification.update(
+        {
+          readers: sequelize.literal(
+            `JSON_ARRAY_APPEND(readers, '$', ${userId})`,
+          ),
+        },
+        {
+          where: {
+            id: notificationIds,
+          },
+        },
+      );
+
+      // Return the array of updated notifications
+      return updatedNotifications;
+    } catch (error) {
+      // If an error occurs during the update process, throw the error
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes notifications that were created more than 15 days ago.
+   * @returns {Promise<number>} - A promise resolving to the number of deleted notifications.
+   * @throws {Error} - Throws an error if the deletion fails.
+   */
+  deleteOldNotifications: async () => {
+    try {
+      // Calculate the date 15 days ago from the current time
+      const fifteenDaysAgo = new Date(new Date() - 15 * 24 * 60 * 60 * 1000);
+
+      // Use Sequelize's destroy method to delete notifications older than 15 days
+      const deletedNotificationCount = await Notification.destroy({
+        where: {
+          createdAt: {
+            [Op.lte]: fifteenDaysAgo,
+          },
+        },
+        force: true, // Use force: true to perform a hard delete
+      });
+
+      // Return the number of deleted notifications
+      return deletedNotificationCount;
+    } catch (error) {
+      // If an error occurs during the deletion process, throw the error
       throw error;
     }
   },
