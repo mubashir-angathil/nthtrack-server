@@ -1,7 +1,5 @@
 const express = require("express");
-
 const router = express.Router();
-
 const projectController = require("../controllers/project.controller");
 const {
   verifyToken,
@@ -10,29 +8,14 @@ const {
 const { tryCatch } = require("../utils/helpers/helpers");
 
 /**
- * Express route for creating a new project.
- * Requires a valid authentication token.
- * @name POST /api/project/create
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for creating a new project. Requires a valid token for authentication.
+ * POST /api/project/create
  */
-
 router.post("/create", verifyToken, tryCatch(projectController.createProject));
 
 /**
- * Express route for updating an existing project.
- * Requires a valid authentication token.
- * @name PATCH /api/project/update
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for updating an existing project. Requires a valid token and specific project permissions.
+ * PATCH /api/project/update
  */
 router.patch(
   "/update",
@@ -42,28 +25,14 @@ router.patch(
 );
 
 /**
- * Express route for retrieving all projects.
- * Requires a valid authentication token.
- * @name GET /api/project/all
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for retrieving all projects. Requires a valid token for authentication.
+ * GET /api/project/all
  */
 router.get("/all", verifyToken, tryCatch(projectController.getAllProjects));
 
 /**
- * Express route for retrieving a project by ID.
- * Requires a valid authentication token.
- * @name GET /api/project/:projectId
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for retrieving a specific project by its ID. Requires a valid token and specific project permissions.
+ * GET /api/project/:projectId
  */
 router.get(
   "/:projectId",
@@ -73,15 +42,8 @@ router.get(
 );
 
 /**
- * Express route for closing a project by ID.
- * Requires a valid authentication token.
- * @name PATCH /api/project/close
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for closing a specific project. Requires a valid token and specific project permissions.
+ * DELETE /api/project/:projectId/close
  */
 router.delete(
   "/:projectId/close",
@@ -89,17 +51,9 @@ router.delete(
   validatePermission("project.id"),
   tryCatch(projectController.closeProjectById),
 );
-
 /**
- * Express route for creating an task within a project.
- * Requires a valid authentication token.
- * @name POST /api/project/:projectId/task/create
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for creating a new task within a project. Requires a valid token and specific project task permissions.
+ * POST /api/project/:projectId/task/create
  */
 router.post(
   "/:projectId/task/create",
@@ -109,15 +63,8 @@ router.post(
 );
 
 /**
- * Express route for updating an task within a project.
- * Requires a valid authentication token.
- * @name PATCH /api/project/update-task
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for updating an existing task within a project. Requires a valid token and specific project permissions.
+ * PATCH /api/project/:projectId/task/update
  */
 router.patch(
   "/:projectId/task/update",
@@ -127,15 +74,8 @@ router.patch(
 );
 
 /**
- * Express route for retrieving all tasks within a project.
- * Requires a valid authentication token.
- * @name GET /api/project/:projectId/task/all
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for retrieving all tasks within a project. Requires a valid token and specific project task permissions.
+ * GET /api/project/:projectId/task/all
  */
 router.get(
   "/:projectId/task/all",
@@ -145,15 +85,8 @@ router.get(
 );
 
 /**
- * Express route for retrieving an task by ID within a project.
- * Requires a valid authentication token.
- * @name GET /api/project/task/:taskId
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for retrieving a specific task within a project by its ID. Requires a valid token and specific project task permissions.
+ * GET /api/project/:projectId/task/:taskId
  */
 router.get(
   "/:projectId/task/:taskId",
@@ -163,15 +96,8 @@ router.get(
 );
 
 /**
- * Express route for closing an task by ID within a project.
- * Requires a valid authentication token.
- * @name PATCH /api/project/task/close
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} middleware - Middleware function to verify authentication token.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for closing a specific task within a project. Requires a valid token and specific project task permissions.
+ * DELETE /api/project/:projectId/task/:taskId/close
  */
 router.delete(
   "/:projectId/task/:taskId/close",
@@ -180,6 +106,10 @@ router.delete(
   tryCatch(projectController.closeTaskById),
 );
 
+/**
+ * Route for adding a member to a project. Requires a valid token and specific project member permissions.
+ * POST /api/project/:projectId/member/add
+ */
 router.post(
   "/:projectId/member/add",
   verifyToken,
@@ -187,6 +117,10 @@ router.post(
   tryCatch(projectController.addMember),
 );
 
+/**
+ * Route for updating a member within a project. Requires a valid token and specific project member permissions.
+ * PUT /api/project/:projectId/member/update
+ */
 router.put(
   "/:projectId/member/update",
   verifyToken,
@@ -194,6 +128,10 @@ router.put(
   tryCatch(projectController.updateMember),
 );
 
+/**
+ * Route for removing a member from a project. Requires a valid token and specific project member permissions.
+ * DELETE /api/project/:projectId/member/:memberId/delete
+ */
 router.delete(
   "/:projectId/member/:memberId/delete",
   verifyToken,
@@ -201,36 +139,60 @@ router.delete(
   tryCatch(projectController.removeMember),
 );
 
+/**
+ * Route for creating a new permission. Requires a valid token.
+ * POST /api/project/permission/create
+ */
 router.post(
   "/permission/create",
   verifyToken,
   tryCatch(projectController.createPermission),
 );
 
+/**
+ * Route for updating an existing permission. Requires a valid token.
+ * PATCH /api/project/permission/:permissionId/update
+ */
 router.patch(
   "/permission/:permissionId/update",
   verifyToken,
   tryCatch(projectController.updatePermission),
 );
 
+/**
+ * Route for retrieving projects associated with a specific team. Requires a valid token.
+ * GET /api/project/team/:teamId
+ */
 router.get(
   "/team/:teamId",
   verifyToken,
   tryCatch(projectController.getTeamProjects),
 );
 
+/**
+ * Route for retrieving project members. Requires a valid token.
+ * POST /api/project/:projectId/members
+ */
 router.post(
   "/:projectId/members",
   verifyToken,
   tryCatch(projectController.getProjectMembers),
 );
 
+/**
+ * Route for marking all notifications as read. Requires a valid token.
+ * PATCH /api/project/notification/all/mark-as-read
+ */
 router.patch(
   "/notification/all/mark-as-read",
   verifyToken,
   tryCatch(projectController.markNotificationAsRead),
 );
 
+/**
+ * Route for reopening a closed project. Requires a valid token and specific project permissions.
+ * PATCH /api/project/:projectId/reopen
+ */
 router.patch(
   "/:projectId/reopen",
   verifyToken,
@@ -238,6 +200,10 @@ router.patch(
   tryCatch(projectController.restoreProject),
 );
 
+/**
+ * Route for deleting a project. Requires a valid token and specific project permissions.
+ * DELETE /api/project/:projectId/delete
+ */
 router.delete(
   "/:projectId/delete",
   verifyToken,
@@ -245,6 +211,10 @@ router.delete(
   tryCatch(projectController.deleteProject),
 );
 
+/**
+ * Route for reopening a closed task within a project. Requires a valid token and specific task permissions.
+ * PATCH /api/project/:projectId/task/:taskId/reopen
+ */
 router.patch(
   "/:projectId/task/:taskId/reopen",
   verifyToken,
@@ -252,6 +222,10 @@ router.patch(
   tryCatch(projectController.restoreClosedTask),
 );
 
+/**
+ * Route for deleting a task within a project. Requires a valid token and specific task permissions.
+ * DELETE /api/project/:projectId/task/:taskId/delete
+ */
 router.delete(
   "/:projectId/task/:taskId/delete",
   verifyToken,

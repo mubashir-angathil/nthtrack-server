@@ -80,6 +80,13 @@ module.exports = {
       };
     }
   },
+
+  /**
+   * Wraps a controller function with a try-catch block for structured error handling.
+   * @function tryCatch
+   * @param {Function} controller - The controller function to be wrapped.
+   * @returns {Function} - The wrapped controller function.
+   */
   tryCatch: (controller) => async (req, res, next) => {
     try {
       await controller(req, res, next);
@@ -87,6 +94,13 @@ module.exports = {
       next(error);
     }
   },
+
+  /**
+   * Checks if a specific permission is included in the path based on the HTTP method.
+   * @function isPathPermissionIncluded
+   * @param {Object} options - The options containing permission, path, and method.
+   * @returns {boolean} - Returns true if the permission is included, false otherwise.
+   */
   isPathPermissionIncluded: async ({ permission, path, method }) => {
     const keys = path.split(".");
     let current = permission;
@@ -99,31 +113,37 @@ module.exports = {
     }
     return current[method === "PATCH" ? "PUT" : method] === true;
   },
-  isArrayUnique: (arr) => {
-    // Create a Set from the array, removing duplicates
-    const uniqueSet = new Set(arr);
 
-    // If the size of the Set is equal to the length of the array, all elements are unique
+  /**
+   * Checks if an array contains only unique elements.
+   * @function isArrayUnique
+   * @param {Array} arr - The array to be checked for uniqueness.
+   * @returns {boolean} - Returns true if all elements are unique, false otherwise.
+   */
+  isArrayUnique: (arr) => {
+    const uniqueSet = new Set(arr);
     return uniqueSet.size === arr.length;
   },
+
+  /**
+   * Validates whether a user can be added as a super admin based on project, user, and permission information.
+   * @function validateIsUserAddAsSuperAdmin
+   * @param {Object} options - The options containing projectId, userId, permissionId, and next.
+   * @throws {Error} - Throws an error with specific messages and HTTP codes based on validation results.
+   * @returns {Object} - Returns the project if validation is successful.
+   */
   validateIsUserAddAsSuperAdmin: async ({
     projectId,
     userId,
     permissionId,
     next,
   }) => {
-    // Retrieve the project by ID
     const project = await projectService.getProjectById({ projectId });
-
-    // Check if the user being added is an admin of the project
     const isAdmin = await project.checkIsAdmin(userId);
-
-    // Retrieve the "Super Admin" permission
     const superAdminPermission = await projectService.getPermissionByName({
       permission: "Super Admin",
     });
 
-    // If the user is an admin but not adding as super admin, disallow the operation
     if (isAdmin && superAdminPermission.id !== permissionId) {
       throw next({
         message: "This user is an admin of the project! Add as a super admin.",
@@ -131,7 +151,6 @@ module.exports = {
       });
     }
 
-    // If the user is not an admin and adding as super admin, disallow the operation
     if (!isAdmin && superAdminPermission.id === permissionId) {
       throw next({
         message: "Can't add multiple super admins",
@@ -139,7 +158,6 @@ module.exports = {
       });
     }
 
-    // Return the project if validation is successful
     return project;
   },
 };

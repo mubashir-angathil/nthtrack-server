@@ -1,39 +1,23 @@
 const express = require("express");
-
 const router = express.Router();
 const authController = require("../controllers/auth.controller");
 const { tryCatch } = require("../utils/helpers/helpers");
 
 /**
- * Express route for user sign-up.
- * @name POST /api/auth/sign-up
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for user sign-up.
+ * POST /api/auth/sign-up
  */
 router.post("/sign-up", authController.doSignUp);
 
 /**
- * Express route for user sign-in.
- * @name POST /api/auth/sign-in
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for user login.
+ * POST /api/auth/login
  */
 router.post("/login", tryCatch(authController.doSignIn));
 
 /**
- * Express route for obtaining a new access token using a refresh token.
- * @name POST /api/auth/token
- * @function
- * @memberof module:routes
- * @inner
- * @param {string} path - Express route path.
- * @param {Function} controller - Controller function to handle the request.
+ * Route for obtaining a new access token.
+ * POST /api/auth/token
  */
 router.post("/token", tryCatch(authController.getNewAccessToken));
 
