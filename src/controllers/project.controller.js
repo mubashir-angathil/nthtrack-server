@@ -732,25 +732,27 @@ module.exports = {
   },
 
   /**
-   * Restore closed project.
-   * @param {Object} req - Express request object.
-   * @param {Object} res - Express response object.
-   * @param {Function} next - Express next function.
-   * @returns {Promise<void>} - Asynchronous function.
+   * Restores a project by its ID, updating its status to 'Opened'.
+   * @param {Object} req - The request object.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function.
+   * @returns {Promise<void>} - A promise resolving to the result of the restoration operation.
+   * @throws {Error} - Throws an error if the restoration process fails.
    */
-
   restoreProject: async (req, res, next) => {
     const { projectId } = req.params;
-    // Retrieve the 'opened' status
+
+    // Retrieve the 'Opened' status
     const openedStatus = await projectService.getStatus({ name: "Opened" });
     if (!openedStatus?.id) return next({ message: "Status not found" });
 
+    // Restore the closed project
     const reopenClosedProject = await projectService.restoreProject({
       projectId,
     });
 
     if (reopenClosedProject) {
-      // Update the task status to 'opened'
+      // Update the project status to 'Opened'
       const isProjectUpdated = await projectService.updateProject({
         projectId,
         closedBy: null,
@@ -758,70 +760,109 @@ module.exports = {
       });
 
       if (isProjectUpdated) {
-        return res
-          .status(200)
-          .json({ success: true, message: "Project successfully reopened" });
+        return res.status(200).json({
+          success: true,
+          message: "Project successfully reopened",
+        });
       }
     }
 
+    // Propagate an error if the reopening process fails
     next({
       message: "Project reopening failed",
     });
   },
 
   /**
-   * Restore closed task on project.
-   * @param {Object} req - Express request object.
-   * @param {Object} res - Express response object.
-   * @param {Function} next - Express next function.
-   * @returns {Promise<void>} - Asynchronous function.
+   * Restores a closed task by its ID, updating its status to 'Opened'.
+   * @param {Object} req - The request object.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function.
+   * @returns {Promise<void>} - A promise resolving to the result of the restoration operation.
+   * @throws {Error} - Throws an error if the restoration process fails.
    */
   restoreClosedTask: async (req, res, next) => {
     const { taskId, projectId } = req.params;
 
-    // Retrieve the 'opened' status
+    // Retrieve the 'Opened' status
     const openedStatus = await projectService.getStatus({ name: "Opened" });
     if (!openedStatus?.id) return next({ message: "Status not found" });
 
+    // Restore the closed task
     const reopenClosedTask = await projectService.restoreClosedTask({
       taskId,
       projectId,
     });
 
     if (reopenClosedTask) {
-      // Update the task status to 'opened'
+      // Update the task status to 'Opened'
       const isTaskUpdated = await projectService.updateTask({
         taskId,
         closedBy: null,
         statusId: openedStatus.id,
       });
+
       if (isTaskUpdated) {
-        return res
-          .status(200)
-          .json({ success: true, message: "Task successfully reopened" });
+        return res.status(200).json({
+          success: true,
+          message: "Task successfully reopened",
+        });
       }
     }
 
+    // Propagate an error if the reopening process fails
     next({
       message: "Task reopening failed",
     });
   },
 
   /**
-   * Delete project.
-   * @param {Object} req - Express request object.
-   * @param {Object} res - Express response object.
-   * @param {Function} next - Express next function.
-   * @returns {Promise<void>} - Asynchronous function.
+   * Deletes a project by its ID.
+   * @param {Object} req - The request object.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function.
+   * @returns {Promise<void>} - A promise resolving to the result of the deletion operation.
+   * @throws {Error} - Throws an error if the deletion process fails.
    */
-  deleteProject: async (req, res, next) => {},
+  deleteProject: async (req, res, next) => {
+    const { projectId } = req.params;
+
+    // Delete the project by its ID
+    const response = await projectService.deleteProject({ projectId });
+
+    if (response) {
+      return res.status(200).json({
+        success: true,
+        message: "Project deleted successfully",
+      });
+    }
+
+    // Propagate an error if the deletion process fails
+    next({ message: "Failed to delete project" });
+  },
 
   /**
-   * Delete task .
-   * @param {Object} req - Express request object.
-   * @param {Object} res - Express response object.
-   * @param {Function} next - Express next function.
-   * @returns {Promise<void>} - Asynchronous function.
+   * Deletes a task by its ID within a project.
+   * @param {Object} req - The request object.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function.
+   * @returns {Promise<void>} - A promise resolving to the result of the deletion operation.
+   * @throws {Error} - Throws an error if the deletion process fails.
    */
-  deleteTask: async (req, res, next) => {},
+  deleteTask: async (req, res, next) => {
+    const { projectId, taskId } = req.params;
+
+    // Delete the task by its ID and project ID
+    const response = await projectService.deleteTask({ projectId, taskId });
+
+    if (response) {
+      return res.status(200).json({
+        success: true,
+        message: "Task deleted successfully",
+      });
+    }
+
+    // Propagate an error if the deletion process fails
+    next({ message: "Failed to delete task" });
+  },
 };

@@ -256,7 +256,7 @@ router.delete(
   "/:projectId/task/:taskId/delete",
   verifyToken,
   validatePermission("project.task.id"),
-  tryCatch(projectController.deleteProject),
+  tryCatch(projectController.deleteTask),
 );
 
 module.exports = router;

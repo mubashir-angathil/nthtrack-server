@@ -50,12 +50,12 @@ const validatePermission = (permissionKey) => {
       const userId = req?.user?.id;
 
       if (projectId && userId) {
-        const isAdmin = await projectService.checkIsAdmin({
+        const isSuperAdmin = await projectService.checkIsAdmin({
           projectId,
           userId,
         });
 
-        if (isAdmin) return next();
+        if (isSuperAdmin) return next();
 
         const response = await projectService.getPermission({
           projectId,

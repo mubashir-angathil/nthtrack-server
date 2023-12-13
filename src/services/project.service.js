@@ -846,18 +846,78 @@ module.exports = {
     }
   },
 
+  /**
+   * Restores a project with the specified projectId.
+   * @param {Object} options - The options for restoring a project.
+   * @param {number} options.projectId - The ID of the project to be restored.
+   * @returns {Promise<number>} - A promise resolving to the number of restored projects.
+   * @throws {Error} - Throws an error if the restoration process fails.
+   */
   restoreProject: async ({ projectId }) => {
     try {
+      // Attempt to restore a project with the given projectId
       return await Project.restore({ where: { id: projectId } });
     } catch (error) {
+      // Handle and propagate any errors that occur during the restoration process
       throw error;
     }
   },
 
+  /**
+   * Restores a closed task within the specified project.
+   * @param {Object} options - The options for restoring a closed task.
+   * @param {number} options.projectId - The ID of the project containing the task.
+   * @param {number} options.taskId - The ID of the closed task to be restored.
+   * @returns {Promise<number>} - A promise resolving to the number of restored tasks.
+   * @throws {Error} - Throws an error if the restoration process fails.
+   */
   restoreClosedTask: async ({ projectId, taskId }) => {
     try {
+      // Attempt to restore a closed task with the given taskId within the specified projectId
       return await Task.restore({ where: { id: taskId, projectId } });
     } catch (error) {
+      // Handle and propagate any errors that occur during the restoration process
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a task within the specified project.
+   * @param {Object} options - The options for deleting a task.
+   * @param {number} options.projectId - The ID of the project containing the task.
+   * @param {number} options.taskId - The ID of the task to be deleted.
+   * @returns {Promise<number>} - A promise resolving to the number of deleted tasks.
+   * @throws {Error} - Throws an error if the deletion process fails.
+   */
+  deleteTask: async ({ projectId, taskId }) => {
+    try {
+      // Attempt to delete a task with the given taskId within the specified projectId
+      return await Task.destroy({
+        where: { projectId, id: taskId },
+        force: true,
+      });
+    } catch (error) {
+      // Handle and propagate any errors that occur during the deletion process
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a project by its ID.
+   * @param {Object} options.projectId - The options for deleting a project.
+   * @param {number} options.projectId - The ID of the project to be deleted.
+   * @returns {Promise<number>} - A promise resolving to the number of deleted projects.
+   * @throws {Error} - Throws an error if the deletion process fails.
+   */
+  deleteProject: async ({ projectId }) => {
+    try {
+      // Attempt to delete the project with the given projectId
+      return await Project.destroy({
+        where: { id: projectId },
+        force: true,
+      });
+    } catch (error) {
+      // Handle and propagate any errors that occur during the deletion process
       throw error;
     }
   },

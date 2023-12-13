@@ -82,7 +82,7 @@ module.exports = (sequelize, DataTypes) => {
     Task.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",
-      onDelete: "RESTRICT",
+      onDelete: "CASCADE",
     });
     Task.belongsTo(models.User, {
       foreignKey: "createdBy",
