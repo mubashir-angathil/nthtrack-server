@@ -186,12 +186,14 @@ router.post(
   validatePermission("project.member.id"),
   tryCatch(projectController.addMember),
 );
+
 router.put(
   "/:projectId/member/update",
   verifyToken,
   validatePermission("project.member.id"),
   tryCatch(projectController.updateMember),
 );
+
 router.delete(
   "/:projectId/member/:memberId/delete",
   verifyToken,
@@ -204,16 +206,19 @@ router.post(
   verifyToken,
   tryCatch(projectController.createPermission),
 );
+
 router.patch(
   "/permission/:permissionId/update",
   verifyToken,
   tryCatch(projectController.updatePermission),
 );
+
 router.get(
   "/team/:teamId",
   verifyToken,
   tryCatch(projectController.getTeamProjects),
 );
+
 router.post(
   "/:projectId/members",
   verifyToken,
@@ -225,4 +230,33 @@ router.patch(
   verifyToken,
   tryCatch(projectController.markNotificationAsRead),
 );
+
+router.patch(
+  "/:projectId/reopen",
+  verifyToken,
+  validatePermission("project.id"),
+  tryCatch(projectController.restoreProject),
+);
+
+router.delete(
+  "/:projectId/delete",
+  verifyToken,
+  validatePermission("project.id"),
+  tryCatch(projectController.deleteProject),
+);
+
+router.patch(
+  "/:projectId/task/:taskId/reopen",
+  verifyToken,
+  validatePermission("project.task.id"),
+  tryCatch(projectController.restoreClosedTask),
+);
+
+router.delete(
+  "/:projectId/task/:taskId/delete",
+  verifyToken,
+  validatePermission("project.task.id"),
+  tryCatch(projectController.deleteProject),
+);
+
 module.exports = router;

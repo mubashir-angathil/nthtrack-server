@@ -730,4 +730,98 @@ module.exports = {
     // If marking as read fails, trigger the error handler
     next({ message: "Failed to mark notifications as read." });
   },
+
+  /**
+   * Restore closed project.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+
+  restoreProject: async (req, res, next) => {
+    const { projectId } = req.params;
+    // Retrieve the 'opened' status
+    const openedStatus = await projectService.getStatus({ name: "Opened" });
+    if (!openedStatus?.id) return next({ message: "Status not found" });
+
+    const reopenClosedProject = await projectService.restoreProject({
+      projectId,
+    });
+
+    if (reopenClosedProject) {
+      // Update the task status to 'opened'
+      const isProjectUpdated = await projectService.updateProject({
+        projectId,
+        closedBy: null,
+        statusId: openedStatus.id,
+      });
+
+      if (isProjectUpdated) {
+        return res
+          .status(200)
+          .json({ success: true, message: "Project successfully reopened" });
+      }
+    }
+
+    next({
+      message: "Project reopening failed",
+    });
+  },
+
+  /**
+   * Restore closed task on project.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  restoreClosedTask: async (req, res, next) => {
+    const { taskId, projectId } = req.params;
+
+    // Retrieve the 'opened' status
+    const openedStatus = await projectService.getStatus({ name: "Opened" });
+    if (!openedStatus?.id) return next({ message: "Status not found" });
+
+    const reopenClosedTask = await projectService.restoreClosedTask({
+      taskId,
+      projectId,
+    });
+
+    if (reopenClosedTask) {
+      // Update the task status to 'opened'
+      const isTaskUpdated = await projectService.updateTask({
+        taskId,
+        closedBy: null,
+        statusId: openedStatus.id,
+      });
+      if (isTaskUpdated) {
+        return res
+          .status(200)
+          .json({ success: true, message: "Task successfully reopened" });
+      }
+    }
+
+    next({
+      message: "Task reopening failed",
+    });
+  },
+
+  /**
+   * Delete project.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  deleteProject: async (req, res, next) => {},
+
+  /**
+   * Delete task .
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  deleteTask: async (req, res, next) => {},
 };

@@ -61,13 +61,20 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to the updated project.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  updateProject: async ({ name, description, statusId, projectId }) => {
+  updateProject: async ({
+    name,
+    description,
+    closedBy,
+    statusId,
+    projectId,
+  }) => {
     try {
       // Use Sequelize model to update an existing project
       const [updatedProject] = await Project.update(
         {
           name,
           statusId,
+          closedBy,
           description,
         },
         {
@@ -208,7 +215,7 @@ module.exports = {
   }) => {
     try {
       // Use Sequelize model to update an existing task
-      const updatedTask = await Task.update(
+      const [updatedTask] = await Task.update(
         {
           statusId,
           description,
@@ -835,6 +842,22 @@ module.exports = {
       return deletedNotificationCount;
     } catch (error) {
       // If an error occurs during the deletion process, throw the error
+      throw error;
+    }
+  },
+
+  restoreProject: async ({ projectId }) => {
+    try {
+      return await Project.restore({ where: { id: projectId } });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  restoreClosedTask: async ({ projectId, taskId }) => {
+    try {
+      return await Task.restore({ where: { id: taskId, projectId } });
+    } catch (error) {
       throw error;
     }
   },
