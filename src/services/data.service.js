@@ -97,9 +97,11 @@ module.exports = {
       const uniqueUsersMap = new Map();
       // Iterate through teams and add unique users to the map
       teams.forEach((team) => {
-        const user = team.project.createdByUser;
-        // Use user ID as the key in the Map to ensure uniqueness
-        uniqueUsersMap.set(user.id, user);
+        if (team.project.createdByUser.id !== userId) {
+          const user = team.project.createdByUser;
+          // Use user ID as the key in the Map to ensure uniqueness
+          uniqueUsersMap.set(user.id, user);
+        }
       });
 
       // Convert the Map values to an array
