@@ -18,19 +18,10 @@ module.exports = {
     // Extract relevant information from the request body
     const { name, description } = req.body;
 
-    // Retrieve the default "Opened" status
-    const openStatus = await projectService.getStatus({ name: "opened" });
-
-    // Check if the status was found
-    if (!openStatus?.id) {
-      next({ message: "Status not found!" });
-    }
-
     // Call the project service to create a new project
     const project = await projectService.createProject({
       name,
       description,
-      statusId: openStatus.id,
       createdBy: req.user.id,
     });
 
@@ -57,14 +48,14 @@ module.exports = {
    */
   updateProject: async (req, res, next) => {
     // Extract relevant information from the request body
-    const { name, description, statusId, projectId } = req.body;
+    const { name, description, projectId } = req.body;
 
     // Call the project service to update an existing project
     const updatedProject = await projectService.updateProject({
       projectId,
       name,
       description,
-      statusId,
+      updatedBy: req.user.id,
     });
 
     // Check if the project update was successful
@@ -177,27 +168,101 @@ module.exports = {
       });
     }
 
-    // Update the project status to closed
-    const updatedProject = await projectService.updateProject({
+    // fetch project by id
+    const project = await projectService.getProjectById({
       projectId,
-      statusId: 2, // Assuming 2 represents the 'closed' status
     });
 
     // Close the project
-    const closeProject = await projectService.closeProjectById({ projectId });
+    const closeProject = await projectService.closeProjectById({
+      projectId,
+    });
 
     // Check if the project was successfully updated and closed
-    if (!updatedProject || !closeProject) {
-      return next({
-        message: "Project not found or already closed.",
+    if (closeProject) {
+      // update closedBy and updatedBy as a null
+      project.closedBy = req.user.id;
+      project.updatedBy = req.user.id;
+
+      // save new update
+      await project.save();
+
+      // Respond with success message
+      return res.status(200).json({
+        success: true,
+        message: "Project closed successfully.",
+      });
+    }
+    next({
+      message: "Project not found or already closed.",
+    });
+  },
+
+  /**
+   * Restores a project by its ID.
+   * @param {Object} req - The request object.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function.
+   * @returns {Promise<void>} - A promise resolving to the result of the restoration operation.
+   * @throws {Error} - Throws an error if the restoration process fails.
+   */
+  restoreProject: async (req, res, next) => {
+    const { projectId } = req.params;
+
+    // Restore the closed project
+    const reopenClosedProject = await projectService.restoreProject({
+      projectId,
+    });
+
+    if (reopenClosedProject) {
+      // Update the project status to 'Opened'
+      const project = await projectService.getProjectById({
+        projectId,
+      });
+
+      // update closedBy and updatedBy as a null
+      project.closedBy = null;
+      project.updatedBy = req.user.id;
+
+      // save new update
+      await project.save();
+
+      // if (isProjectUpdated) {
+      return res.status(200).json({
+        success: true,
+        message: "Project successfully reopened",
       });
     }
 
-    // Respond with success message
-    return res.status(200).json({
-      success: true,
-      message: "Project closed successfully.",
+    // Propagate an error if the reopening process fails
+    next({
+      message: "Project reopening failed",
     });
+  },
+
+  /**
+   * Deletes a project by its ID.
+   * @param {Object} req - The request object.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function.
+   * @returns {Promise<void>} - A promise resolving to the result of the deletion operation.
+   * @throws {Error} - Throws an error if the deletion process fails.
+   */
+  deleteProject: async (req, res, next) => {
+    const { projectId } = req.params;
+
+    // Delete the project by its ID
+    const response = await projectService.deleteProject({ projectId });
+
+    if (response) {
+      return res.status(200).json({
+        success: true,
+        message: "Project deleted successfully",
+      });
+    }
+
+    // Propagate an error if the deletion process fails
+    next({ message: "Failed to delete project" });
   },
 
   /**
@@ -732,48 +797,6 @@ module.exports = {
   },
 
   /**
-   * Restores a project by its ID, updating its status to 'Opened'.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   * @param {Function} next - The next middleware function.
-   * @returns {Promise<void>} - A promise resolving to the result of the restoration operation.
-   * @throws {Error} - Throws an error if the restoration process fails.
-   */
-  restoreProject: async (req, res, next) => {
-    const { projectId } = req.params;
-
-    // Retrieve the 'Opened' status
-    const openedStatus = await projectService.getStatus({ name: "Opened" });
-    if (!openedStatus?.id) return next({ message: "Status not found" });
-
-    // Restore the closed project
-    const reopenClosedProject = await projectService.restoreProject({
-      projectId,
-    });
-
-    if (reopenClosedProject) {
-      // Update the project status to 'Opened'
-      const isProjectUpdated = await projectService.updateProject({
-        projectId,
-        closedBy: null,
-        statusId: openedStatus.id,
-      });
-
-      if (isProjectUpdated) {
-        return res.status(200).json({
-          success: true,
-          message: "Project successfully reopened",
-        });
-      }
-    }
-
-    // Propagate an error if the reopening process fails
-    next({
-      message: "Project reopening failed",
-    });
-  },
-
-  /**
    * Restores a closed task by its ID, updating its status to 'Opened'.
    * @param {Object} req - The request object.
    * @param {Object} res - The response object.
@@ -814,31 +837,6 @@ module.exports = {
     next({
       message: "Task reopening failed",
     });
-  },
-
-  /**
-   * Deletes a project by its ID.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   * @param {Function} next - The next middleware function.
-   * @returns {Promise<void>} - A promise resolving to the result of the deletion operation.
-   * @throws {Error} - Throws an error if the deletion process fails.
-   */
-  deleteProject: async (req, res, next) => {
-    const { projectId } = req.params;
-
-    // Delete the project by its ID
-    const response = await projectService.deleteProject({ projectId });
-
-    if (response) {
-      return res.status(200).json({
-        success: true,
-        message: "Project deleted successfully",
-      });
-    }
-
-    // Propagate an error if the deletion process fails
-    next({ message: "Failed to delete project" });
   },
 
   /**

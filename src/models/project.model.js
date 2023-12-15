@@ -27,14 +27,6 @@ module.exports = (sequelize, DataTypes) => {
           },
         },
       },
-      statusId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: sequelize.models.Status,
-          key: "id",
-        },
-      },
       createdBy: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -75,11 +67,6 @@ module.exports = (sequelize, DataTypes) => {
   // Define associations
   Project.associate = (models) => {
     // Project.sync({ alter: true });
-    Project.belongsTo(models.Status, {
-      foreignKey: "statusId",
-      onDelete: "RESTRICT",
-      as: "status",
-    });
     Project.belongsTo(models.User, {
       foreignKey: "createdBy",
       as: "createdByUser",

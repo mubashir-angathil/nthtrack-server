@@ -23,13 +23,12 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to the created project.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  createProject: async ({ name, description, statusId, createdBy }) => {
+  createProject: async ({ name, description, createdBy }) => {
     try {
       // Use Sequelize model to create a new project
       const newProject = await Project.create({
         name,
         description,
-        statusId,
         createdBy,
       });
 
@@ -64,8 +63,8 @@ module.exports = {
   updateProject: async ({
     name,
     description,
+    updatedBy,
     closedBy,
-    statusId,
     projectId,
   }) => {
     try {
@@ -73,8 +72,8 @@ module.exports = {
       const [updatedProject] = await Project.update(
         {
           name,
-          statusId,
           closedBy,
+          updatedBy,
           description,
         },
         {
@@ -108,29 +107,16 @@ module.exports = {
         limit,
         paranoid: false, // Include soft-deleted records
         where: { ...whereClause, createdBy: userId },
-        include: [
-          {
-            model: Status,
-            as: "status",
-            attributes: {
-              exclude: ["createdAt", "updatedAt"],
-            },
-          },
-        ],
-        order: [
-          ["statusId", "ASC"],
-          ["createdAt", "DESC"],
-        ],
+        order: [["createdAt", "DESC"]],
         attributes: {
           include: [
             [
               sequelize.literal(
-                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.statusId = 1)",
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.closedAt = null)",
               ),
               "taskCount",
             ],
           ],
-          exclude: ["statusId"],
         },
       });
 
@@ -692,24 +678,12 @@ module.exports = {
             ),
           ],
         },
-        include: [
-          {
-            model: Status,
-            as: "status",
-            attributes: {
-              exclude: ["createdAt", "updatedAt"],
-            },
-          },
-        ],
-        order: [
-          ["statusId", "ASC"],
-          ["createdAt", "DESC"],
-        ],
+        order: [["createdAt", "DESC"]],
         attributes: {
           include: [
             [
               sequelize.literal(
-                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.statusId = 1)",
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.closedAt = null)",
               ),
               "taskCount",
             ],
