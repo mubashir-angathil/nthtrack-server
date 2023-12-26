@@ -9,16 +9,24 @@ const {
 const { tryCatch } = require("../utils/helpers/helpers");
 
 /**
- * Route for retrieving trackers. Requires a valid token for authentication.
- * GET /api/trackers
+ * Route for retrieving labels. Requires a valid token for authentication.
+ * GET /api/project/:projectId/labels
  */
-router.get("/trackers", verifyToken, dataController.getTrackers);
+router.post(
+  "/project/:projectId/labels",
+  verifyToken,
+  tryCatch(dataController.getLabels),
+);
 
 /**
  * Route for retrieving statuses. Requires a valid token for authentication.
- * GET /api/statuses
+ * GET /api/project/:projectId/statuses
  */
-router.get("/statuses", verifyToken, dataController.getStatuses);
+router.get(
+  "/project/:projectId/statuses",
+  verifyToken,
+  tryCatch(dataController.getTaskCategoriesByProjectId),
+);
 
 /**
  * Route for retrieving users. Requires a valid token for authentication.

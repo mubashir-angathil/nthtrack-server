@@ -1,66 +1,66 @@
 const dataService = require("../services/data.service");
 const projectService = require("../services/project.service");
+const { httpStatusCode } = require("../utils/constants/Constants");
 const helpers = require("../utils/helpers/helpers");
 const { getCurrentPagination } = require("../utils/helpers/helpers");
 
 module.exports = {
   /**
-   * Retrieves a list of trackers and sends a JSON response based on the success of the operation.
+   * Retrieves a list of labels and sends a JSON response based on the success of the operation.
    *
    * @param {Object} req - Express request object.
    * @param {Object} res - Express response object.
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
-  getTrackers: async (req, res) => {
-    try {
-      // Retrieve list of trackers from the data service
-      const trackers = await dataService.getTrackers();
+  getLabels: async (req, res, next) => {
+    const { projectId } = req.params;
+    // Retrieve list of labels from the data service
+    const labels = await dataService.getLabels({ projectId });
 
-      // Check if the retrieval was successful
-      if (!trackers) {
-        // If not successful, send an error response
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to retrieve trackers." });
-      }
-
-      // Send a successful response with the retrieved data
-      return res.json({ success: true, data: trackers });
-    } catch (error) {
-      // Handle any errors that occurred during the operation
-      res
-        .status(400)
-        .json({ success: false, message: "Error retrieving trackers.", error });
+    // Check if the retrieval was successful
+    if (!labels) {
+      // If not successful, send an error response
+      throw next({ message: "Failed to retrieve labels." });
     }
+
+    // Send a successful response with the retrieved data
+    return res.status(httpStatusCode.OK).json({ success: true, data: labels });
   },
 
   /**
-   * Retrieves a list of status and sends a JSON response based on the success of the operation.
+   * Retrieves a list of task categories and sends a JSON response based on the success of the operation.
    *
    * @param {Object} req - Express request object.
    * @param {Object} res - Express response object.
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
-  getStatuses: async (req, res) => {
+  getTaskCategoriesByProjectId: async (req, res, next) => {
     try {
-      // Retrieve list of statuses from the data service
-      const statuses = await dataService.getStatuses();
+      const { projectId } = req.params;
+      // Retrieve list of task categories from the data service
+      const statuses = await dataService.getTaskCategoriesByProjectId({
+        projectId,
+      });
 
       // Check if the retrieval was successful
       if (!statuses) {
         // If not successful, send an error response
-        return res
-          .status(400)
-          .json({ success: false, message: "Failed to retrieve statuses." });
+        throw next({
+          message: "Failed to retrieve task categories.",
+        });
       }
 
       // Send a successful response with the retrieved data
-      return res.json({ success: true, data: statuses });
+      return res
+        .status(httpStatusCode.OK)
+        .json({ success: true, data: statuses });
     } catch (error) {
       // Handle any errors that occurred during the operation
-      res
-        .status(400)
-        .json({ success: false, message: "Error retrieving statuses.", error });
+      res.status(400).json({
+        success: false,
+        message: "Error retrieving categories.",
+        error,
+      });
     }
   },
 
@@ -83,7 +83,7 @@ module.exports = {
     }
 
     // Send a successful response with the retrieved data
-    return res.json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Successfully retrieved teams",
       data: teams,
@@ -111,7 +111,7 @@ module.exports = {
     }
 
     // Send a successful response with the retrieved data
-    return res.json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Successfully retrieved members",
       data: members,
@@ -145,7 +145,7 @@ module.exports = {
     const users = await dataService.getUsersByIds({ userIds: assignees });
 
     // Send a successful response with the retrieved data
-    return res.json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Successfully retrieved assignees",
       data: users,
@@ -167,7 +167,7 @@ module.exports = {
     // Check if the retrieval was successful
     if (permissions) {
       // Send a successful response with the retrieved data
-      res.json({
+      res.status(httpStatusCode.OK).json({
         success: true,
         message: "Permission retrieved successfully",
         data: permissions,
@@ -199,7 +199,7 @@ module.exports = {
     // Check if users were successfully retrieved
     if (response) {
       // Send a success response with user data and pagination information
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Successfully retrieved users.",
         totalRows: response.count,
@@ -240,7 +240,7 @@ module.exports = {
     }
 
     // Send a success response with notification data and pagination information
-    return res.status(200).json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Notifications retrieved successfully.",
       data: notifications.rows,
@@ -261,7 +261,7 @@ module.exports = {
     });
 
     // Send a success response with retrieved project IDs
-    return res.status(200).json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Project IDs retrieved successfully.",
       data: projectIds,

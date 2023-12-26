@@ -3,9 +3,9 @@ const {
   Project,
   Task,
   Status,
-  Tracker,
   User,
   Member,
+  Label,
   Permission,
   sequelize,
   Notification,
@@ -13,6 +13,7 @@ const {
 
 const { Op } = require("sequelize");
 const dataService = require("./data.service");
+const { labelColors } = require("../utils/constants/Constants");
 
 // Exported module containing functions for project and task management
 module.exports = {
@@ -36,7 +37,7 @@ module.exports = {
         permission: "Super Admin",
       });
 
-      if (adminPermission.id) {
+      if (adminPermission?.id) {
         await module.exports.addMember({
           projectId: newProject.id,
           userId: createdBy,
@@ -46,6 +47,7 @@ module.exports = {
         throw new Error("Permission generation failed");
       }
 
+      await module.exports.createBasicStatuses({ projectId: newProject.id });
       return newProject;
     } catch (error) {
       // Handle errors and format the error message
@@ -112,7 +114,7 @@ module.exports = {
           include: [
             [
               sequelize.literal(
-                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.closedAt = null)",
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
               ),
               "taskCount",
             ],
@@ -137,10 +139,31 @@ module.exports = {
   getProjectById: async ({ projectId }) => {
     try {
       // Use Sequelize model to retrieve a project by ID
-      const project = await Project.findByPk(projectId, {
+      return await Project.findOne({
+        where: { id: parseInt(projectId) },
         paranoid: false,
+        include: [
+          {
+            model: Status,
+            as: "statuses",
+            attributes: {
+              exclude: ["projectId"],
+            },
+          },
+          {
+            model: User,
+            as: "createdByUser",
+          },
+          {
+            model: User,
+            as: "updatedByUser",
+          },
+          {
+            model: User,
+            as: "closedByUser",
+          },
+        ],
       });
-      return project;
     } catch (error) {
       // Handle errors and format the error message
       throw error;
@@ -177,6 +200,22 @@ module.exports = {
     try {
       // Use Sequelize model to create a new task
       const task = await Task.create(newTask);
+
+      const createdByUsers = await dataService.getUsersByIds({
+        userIds: task.createdBy,
+      });
+
+      if (Array.isArray(createdByUsers)) {
+        const [createdByUser] = createdByUsers;
+        // Access the associated user details
+        const createdTaskWithUser = {
+          ...task.get({ plain: true }),
+          createdByUser,
+        };
+
+        return createdTaskWithUser;
+      }
+
       return task;
     } catch (error) {
       // Handle errors and format the error message
@@ -194,9 +233,10 @@ module.exports = {
   updateTask: async ({
     statusId,
     taskId,
+    labelId,
+    task,
     assignees,
     updatedBy,
-    closedBy,
     description,
   }) => {
     try {
@@ -204,10 +244,11 @@ module.exports = {
       const [updatedTask] = await Task.update(
         {
           statusId,
+          task,
+          labelId,
           description,
           updatedBy,
           assignees,
-          closedBy,
         },
         {
           where: { id: taskId },
@@ -227,47 +268,35 @@ module.exports = {
    * @returns {Promise<Array>} - A promise resolving to an array of tasks.
    * @throws {Object} - Throws a formatted error in case of failure.
    */
-  getAllTasks: async ({
-    offset,
-    limit,
-    trackerId,
-    statusId,
-    searchKey,
-    projectId,
-  }) => {
+  getAllTasks: async ({ labelId, searchKey, projectId }) => {
     try {
       // Define a where clause based on the provided filters
       const whereClause = {
         projectId,
-        trackerId,
-        statusId,
+        labelId,
       };
 
-      trackerId === undefined && delete whereClause.trackerId;
-      statusId === undefined && delete whereClause.statusId;
+      labelId === undefined && delete whereClause.labelId;
 
       // Add a search filter if searchKey is provided
       if (searchKey) {
-        whereClause.description = { [Op.like]: `%${searchKey}%` };
+        whereClause.task = { [Op.like]: `%${searchKey}%` };
       }
 
       // Use Sequelize model to retrieve all tasks within a project
-      const tasks = await Task.findAndCountAll({
+      const tasks = await Task.findAll({
         where: whereClause,
         include: [
           {
             model: Status,
             as: "status",
             attributes: {
-              exclude: ["createdAt", "updatedAt"],
+              exclude: ["projectId"],
             },
           },
           {
-            model: Tracker,
-            as: "tracker",
-            attributes: {
-              exclude: ["createdAt", "updatedAt"],
-            },
+            model: Label,
+            as: "label",
           },
           {
             model: User,
@@ -279,38 +308,38 @@ module.exports = {
             as: "updatedByUser",
             attributes: ["id", "username", "email"],
           },
-          {
-            model: User,
-            as: "closedByUser",
-            attributes: ["id", "username", "email"],
-          },
-        ],
-        order: [
-          ["closedAt", "ASC"],
-          ["id", "DESC"],
         ],
         attributes: {
           exclude: [
             "createdBy",
             "updatedBy",
-            "closedBy",
             "statusId",
             "trackerId",
             "projectId",
           ],
         },
-        offset,
-        limit,
         paranoid: false, // Include soft-deleted records
       });
 
       // Map over tasks and get assignees for each task
       await Promise.all(
-        tasks.rows.map(async (task) => dataService.getAssignees(task)),
+        // dataService.getAssignees(task);
+        tasks.map(async (task) => await dataService.getAssignees(task)),
       );
 
-      return tasks;
-      // console.log(tasks.rows[0]);
+      // Group tasks based on status using a regular loop
+      const groupedTasks = {};
+      for (const task of tasks) {
+        const statusName = task.status.name;
+
+        // Create an array for the status if it doesn't exist
+        groupedTasks[statusName] = groupedTasks[statusName] || [];
+
+        // Add the task to the array
+        groupedTasks[statusName].push(task);
+      }
+
+      return groupedTasks;
     } catch (error) {
       // Handle errors and format the error message
       throw error;
@@ -331,17 +360,17 @@ module.exports = {
         paranoid: false,
         include: [
           {
-            model: Tracker,
-            as: "tracker",
+            model: Label,
+            as: "label",
             attributes: {
-              exclude: ["createdAt", "updatedAt"],
+              exclude: ["projectId"],
             },
           },
           {
             model: Status,
             as: "status",
             attributes: {
-              exclude: ["createdAt", "updatedAt"],
+              exclude: ["projectId"],
             },
           },
           {
@@ -354,20 +383,14 @@ module.exports = {
             as: "updatedByUser",
             attributes: ["id", "username", "email"],
           },
-          {
-            model: User,
-            as: "closedByUser",
-            attributes: ["id", "username", "email"],
-          },
         ],
         attributes: {
           exclude: [
             "createdBy",
-            "closedBy",
             "updatedBy",
             "projectId",
             "statusId",
-            "trackerId",
+            "labelId",
           ],
         },
       });
@@ -406,11 +429,10 @@ module.exports = {
    */
   getOpenTasksCountByProjectId: async ({ projectId }) => {
     try {
-      // Use Sequelize model to count open tasks based on the absence of closedAt
+      // Use Sequelize model to count open tasks
       const tasksCount = await Task.count({
         where: {
           projectId,
-          closedAt: { [Op.eq]: null },
         },
       });
       return tasksCount;
@@ -683,7 +705,7 @@ module.exports = {
           include: [
             [
               sequelize.literal(
-                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id and tasks.closedAt = null)",
+                "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
               ),
               "taskCount",
             ],
@@ -867,7 +889,7 @@ module.exports = {
     try {
       // Attempt to delete a task with the given taskId within the specified projectId
       return await Task.destroy({
-        where: { projectId, id: taskId },
+        where: { id: taskId, projectId },
         force: true,
       });
     } catch (error) {
@@ -892,6 +914,122 @@ module.exports = {
       });
     } catch (error) {
       // Handle and propagate any errors that occur during the deletion process
+      throw error;
+    }
+  },
+
+  /**
+   * Create basic statuses for a project.
+   * @param {Object} params - The parameters containing projectId.
+   */
+  createBasicStatuses: async ({ projectId }) => {
+    try {
+      await Status.bulkCreate([
+        { name: "Todo", color: labelColors[0], projectId },
+        { name: "Inprogress", color: labelColors[1], projectId },
+        { name: "Complete", color: labelColors[2], projectId },
+      ]);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Create a label.
+   * @param {Object} label - The label object to be created.
+   * @returns {Object} - The created label.
+   */
+  createLabel: async (label) => {
+    try {
+      return await Label.create(label);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Create a status.
+   * @param {Object} status - The status object to be created.
+   * @returns {Object} - The created status.
+   */
+  createStatus: async (status) => {
+    try {
+      return await Status.create(status);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a status by projectId and statusId.
+   * @param {Object} params - The parameters containing projectId and statusId.
+   * @returns {number} - The number of deleted statuses.
+   */
+  deleteStatus: async ({ projectId, statusId }) => {
+    try {
+      return await Status.destroy({
+        where: {
+          projectId,
+          id: statusId,
+        },
+        force: true,
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a label by projectId and labelId.
+   * @param {Object} params - The parameters containing projectId and labelId.
+   * @returns {number} - The number of deleted labels.
+   */
+  deleteLabel: async ({ projectId, labelId }) => {
+    try {
+      return await Label.destroy({
+        where: {
+          projectId,
+          id: labelId,
+        },
+        force: true,
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update a status by projectId, statusId, name, and color.
+   * @param {Object} params - The parameters containing projectId, statusId, name, and color.
+   * @returns {number} - The number of updated statuses.
+   */
+  updateStatus: async ({ name, color, statusId, projectId }) => {
+    try {
+      return await Status.update(
+        { name, color },
+        {
+          where: { id: statusId, projectId },
+        },
+      );
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update a label by projectId, labelId, name, and color.
+   * @param {Object} params - The parameters containing projectId, labelId, name, and color.
+   * @returns {number} - The number of updated labels.
+   */
+  updateLabel: async ({ name, color, statusId, projectId }) => {
+    try {
+      return await Label.update(
+        { name, color },
+        {
+          where: { id: statusId, projectId },
+        },
+      );
+    } catch (error) {
       throw error;
     }
   },

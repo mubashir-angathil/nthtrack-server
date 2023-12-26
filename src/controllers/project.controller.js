@@ -27,7 +27,7 @@ module.exports = {
 
     // Check if the project creation was successful
     if (!project) {
-      next({ message: "Failed to create a project." });
+      throw next({ message: "Failed to create a project." });
     }
 
     // Respond with success and the created project data
@@ -112,35 +112,25 @@ module.exports = {
    * @param {Object} res - Express response object.
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
-  getProjectById: async (req, res) => {
-    try {
-      // Extract project ID from request parameters
-      const { projectId } = req.params;
+  getProjectById: async (req, res, next) => {
+    // Extract project ID from request parameters
+    const { projectId } = req.params;
+    // Call the project service to retrieve a project by ID
+    const project = await projectService.getProjectById({
+      projectId,
+    });
 
-      // Call the project service to retrieve a project by ID
-      const project = await projectService.getProjectById({ projectId });
-
-      // Check if the project was found
-      if (!project) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Project not found." });
-      }
-
-      // Respond with success and the retrieved project
-      return res.json({
-        success: true,
-        message: "Project retrieved successfully.",
-        data: project,
-      });
-    } catch (error) {
-      // Handle errors during project retrieval by ID
-      res.status(400).json({
-        success: false,
-        message: "Error retrieving the project.",
-        error,
-      });
+    // Check if the project was found
+    if (!project) {
+      return next({ message: "Project not found." });
     }
+
+    // Respond with success and the retrieved project
+    return res.status(httpStatusCode.OK).json({
+      success: true,
+      message: "Project retrieved successfully.",
+      data: project,
+    });
   },
 
   /**
@@ -154,19 +144,6 @@ module.exports = {
   closeProjectById: async (req, res, next) => {
     // Extract project ID from request body
     const { projectId } = req.params;
-
-    // Check the count of open tasks related to the project
-    const openTasksCount = await projectService.getOpenTasksCountByProjectId({
-      projectId,
-    });
-
-    // If there are open tasks, prevent closing the project
-    if (openTasksCount !== 0) {
-      return next({
-        httpCode: 400,
-        message: "Cannot close the project with open tasks.",
-      });
-    }
 
     // fetch project by id
     const project = await projectService.getProjectById({
@@ -188,7 +165,7 @@ module.exports = {
       await project.save();
 
       // Respond with success message
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Project closed successfully.",
       });
@@ -228,7 +205,7 @@ module.exports = {
       await project.save();
 
       // if (isProjectUpdated) {
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Project successfully reopened",
       });
@@ -255,7 +232,7 @@ module.exports = {
     const response = await projectService.deleteProject({ projectId });
 
     if (response) {
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Project deleted successfully",
       });
@@ -275,21 +252,15 @@ module.exports = {
    */
   createTask: async (req, res, next) => {
     const { projectId } = req.params;
-    const { trackerId, description, assignees } = req.body;
-
-    // Assuming "Opened" is the default status name
-    const openStatus = await projectService.getStatus({ name: "opened" });
-
-    if (!openStatus?.id) {
-      throw new Error("Status not found!");
-    }
+    const { statusId, labelId, task, description, assignees } = req.body;
 
     // Prepare the new task object
     const newTask = {
       description,
-      trackerId,
+      labelId,
+      task,
       projectId: parseInt(projectId),
-      statusId: openStatus.id,
+      statusId,
       createdBy: req.user.id,
       assignees,
     };
@@ -314,20 +285,20 @@ module.exports = {
     }
 
     // Call the project service to create a new task
-    const task = await projectService.createTask(newTask);
+    const response = await projectService.createTask(newTask);
 
     // Check if the task creation was successful
-    if (!task) {
-      return next({
+    if (!response) {
+      throw next({
         message: "Failed to create a task.",
       });
     }
 
     // Respond with success and the created task data
-    return res.json({
+    return res.status(httpStatusCode.CREATED).json({
       success: true,
       message: "Task created successfully",
-      data: task,
+      data: response,
     });
   },
 
@@ -340,7 +311,8 @@ module.exports = {
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
   updateTask: async (req, res, next) => {
-    const { trackerId, description, taskId, assignees } = req.body;
+    const { labelId, task, statusId, description, taskId, assignees } =
+      req.body;
 
     if (assignees?.length > 0) {
       // Get project members
@@ -364,24 +336,25 @@ module.exports = {
     }
 
     // Call the project service to update an existing task
-    const updatedTask = await projectService.updateTask({
+    const isUpdated = await projectService.updateTask({
       taskId,
-      trackerId,
+      labelId,
+      task,
+      statusId,
       assignees,
       updatedBy: req.user.id,
       description,
     });
 
     // Check if the task update was successful
-    if (!updatedTask) {
-      next({ message: "Failed to update the task." });
+    if (!isUpdated) {
+      throw next({ message: "Failed to update the task." });
     }
 
     // Respond with success and information about the update
-    return res.status(200).json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Successfully updated task details.",
-      data: [{ updated: Boolean(updatedTask) }],
     });
   },
 
@@ -395,22 +368,13 @@ module.exports = {
   getAllTasks: async (req, res) => {
     try {
       // Extract pagination parameters and other filters from request query
-      const { page, limit, trackerId, statusId, searchKey } = req.query;
+      const { labelId, searchKey } = req.query;
       const { projectId } = req.params;
-
-      // Prepare pagination data
-      const currentPagination = getCurrentPagination({
-        page,
-        limit,
-      });
 
       // Call the project service to retrieve all tasks within a project
       const tasks = await projectService.getAllTasks({
-        offset: currentPagination.offset,
-        limit: currentPagination.limit,
         projectId,
-        trackerId,
-        statusId,
+        labelId,
         searchKey,
       });
 
@@ -422,11 +386,10 @@ module.exports = {
       }
 
       // Respond with success and the retrieved tasks
-      return res.json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Tasks retrieved successfully.",
-        totalRows: tasks.count,
-        data: tasks.rows,
+        data: tasks,
       });
     } catch (error) {
       // Handle errors during task retrieval
@@ -523,57 +486,11 @@ module.exports = {
     }
 
     // Respond with success and the retrieved projects
-    return res.json({
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Projects retrieved successfully.",
       totalRows: projects.count,
       data: projects.rows,
-    });
-  },
-
-  /**
-   * Controller for closing a task by ID within a project.
-   *
-   * @param {Object} req - Express request object.
-   * @param {Object} res - Express response object.
-   * @param {Function} next - Express next function.
-   * @returns {Promise<void>} A promise that resolves once the response is sent.
-   */
-  closeTaskById: async (req, res, next) => {
-    // Extract task ID from request parameters
-    const { taskId } = req.params;
-
-    // Retrieve the 'closed' status
-    const closedStatus = await projectService.getStatus({ name: "closed" });
-
-    if (!closedStatus?.id) {
-      return next({ message: "Status not found" });
-    }
-
-    // Update the task status to 'closed'
-    const isTaskUpdated = await projectService.updateTask({
-      taskId,
-      closedBy: req.user.id,
-      statusId: closedStatus.id,
-    });
-
-    // Check if the task was successfully updated and closed
-    if (!isTaskUpdated) {
-      return next({ message: "Task not updated" });
-    }
-
-    // Close the task
-    const isTaskClosed = await projectService.closeTaskById({ taskId });
-
-    // Check if the task was successfully closed
-    if (!isTaskClosed) {
-      return next({ message: "Task not found or already closed" });
-    }
-
-    // Respond with a success message
-    return res.status(200).json({
-      success: true,
-      message: "Task is closed successfully",
     });
   },
 
@@ -604,7 +521,6 @@ module.exports = {
     if (!teamId) {
       throw next({
         message: "Project not found",
-        httpCode: httpStatusCode.BAD_REQUEST,
       });
     }
 
@@ -661,7 +577,7 @@ module.exports = {
       });
     }
 
-    next({ message: "Member updates failed" });
+    throw next({ message: "Member updates failed" });
   },
 
   /**
@@ -684,7 +600,6 @@ module.exports = {
     if (isAdmin) {
       throw next({
         message: "Super admin permission can't be remove",
-        httpCode: httpStatusCode.BAD_REQUEST,
       });
     }
 
@@ -700,7 +615,7 @@ module.exports = {
       });
     }
 
-    next({ message: "Failed to remove member from the project" });
+    throw next({ message: "Failed to remove member from the project" });
   },
 
   /**
@@ -728,7 +643,7 @@ module.exports = {
     }
 
     // If the permission is not created, send an error response
-    next({ message: "Permission creation failed" });
+    throw next({ message: "Permission creation failed" });
   },
 
   /**
@@ -755,7 +670,7 @@ module.exports = {
 
     // Send a success response with retrieved project members
     if (members) {
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         totalRows: members.count,
         message: "Retrieved project members successfully.",
@@ -764,7 +679,7 @@ module.exports = {
     }
 
     // If members are not found, trigger the error handler
-    next({ message: "Failed to find project members." });
+    throw next({ message: "Failed to find project members." });
   },
 
   /**
@@ -786,57 +701,14 @@ module.exports = {
 
     // Send a success response if notifications are marked as read
     if (markAsRead) {
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Notifications marked as read successfully.",
       });
     }
 
     // If marking as read fails, trigger the error handler
-    next({ message: "Failed to mark notifications as read." });
-  },
-
-  /**
-   * Restores a closed task by its ID, updating its status to 'Opened'.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   * @param {Function} next - The next middleware function.
-   * @returns {Promise<void>} - A promise resolving to the result of the restoration operation.
-   * @throws {Error} - Throws an error if the restoration process fails.
-   */
-  restoreClosedTask: async (req, res, next) => {
-    const { taskId, projectId } = req.params;
-
-    // Retrieve the 'Opened' status
-    const openedStatus = await projectService.getStatus({ name: "Opened" });
-    if (!openedStatus?.id) return next({ message: "Status not found" });
-
-    // Restore the closed task
-    const reopenClosedTask = await projectService.restoreClosedTask({
-      taskId,
-      projectId,
-    });
-
-    if (reopenClosedTask) {
-      // Update the task status to 'Opened'
-      const isTaskUpdated = await projectService.updateTask({
-        taskId,
-        closedBy: null,
-        statusId: openedStatus.id,
-      });
-
-      if (isTaskUpdated) {
-        return res.status(200).json({
-          success: true,
-          message: "Task successfully reopened",
-        });
-      }
-    }
-
-    // Propagate an error if the reopening process fails
-    next({
-      message: "Task reopening failed",
-    });
+    throw next({ message: "Failed to mark notifications as read." });
   },
 
   /**
@@ -851,16 +723,197 @@ module.exports = {
     const { projectId, taskId } = req.params;
 
     // Delete the task by its ID and project ID
-    const response = await projectService.deleteTask({ projectId, taskId });
+    const response = await projectService.deleteTask({
+      projectId,
+      taskId,
+    });
 
     if (response) {
-      return res.status(200).json({
+      return res.status(httpStatusCode.OK).json({
         success: true,
         message: "Task deleted successfully",
       });
     }
 
     // Propagate an error if the deletion process fails
-    next({ message: "Failed to delete task" });
+    throw next({ message: "Failed to delete task" });
+  },
+
+  /**
+   * Creates a new label.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  createLabel: async (req, res, next) => {
+    // Extract relevant information from the request body
+    const { name, color } = req.body;
+    const { projectId } = req.params;
+
+    // Attempt to create a new label using the project service
+    const response = await projectService.createLabel({
+      name,
+      color,
+      projectId,
+    });
+
+    // Check if the label was successfully created
+    if (response) {
+      // Send a successful response if the permission is created
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Label created successfully",
+        data: response,
+      });
+    }
+
+    // If the label is not created, send an error response
+    throw next({ message: "Label creation failed" });
+  },
+
+  /**
+   * Creates a new status.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} A promise that resolves once the response is sent.
+   */
+  createStatus: async (req, res, next) => {
+    // Extract relevant information from the request body
+    const { name, color } = req.body;
+    const { projectId } = req.params;
+
+    // Attempt to create a new status using the project service
+    const response = await projectService.createStatus({
+      name,
+      color,
+      projectId,
+    });
+
+    // Check if the status was successfully created
+    if (response) {
+      // Send a successful response if the permission is created
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Status created successfully",
+        data: response,
+      });
+    }
+
+    // If the label is not created, send an error response
+    throw next({ message: "Status creation failed" });
+  },
+
+  /**
+   * Delete a status by projectId and statusId.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   */
+  deleteStatus: async (req, res, next) => {
+    const { projectId, statusId } = req.params;
+
+    // Call service to delete status
+    const response = await projectService.deleteStatus({
+      projectId,
+      statusId,
+    });
+
+    if (response) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Status deleted successfully",
+      });
+    }
+
+    // If deletion fails, trigger next middleware with an error
+    throw next({ message: "Status deletion failed" });
+  },
+
+  /**
+   * Delete a label by projectId and labelId.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   */
+  deleteLabel: async (req, res, next) => {
+    const { projectId, labelId } = req.params;
+
+    // Call service to delete label
+    const response = await projectService.deleteLabel({
+      projectId,
+      labelId,
+    });
+
+    if (response) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Label deleted successfully",
+      });
+    }
+
+    // If deletion fails, throw an error to be caught by next middleware
+    throw next({ message: "Label deletion failed" });
+  },
+
+  /**
+   * Update a status by projectId and statusId.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   */
+  updateStatus: async (req, res, next) => {
+    const { projectId, statusId } = req.params;
+    const { name, color } = req.body;
+
+    // Call service to update status
+    const response = await projectService.updateStatus({
+      name,
+      color,
+      projectId,
+      statusId,
+    });
+
+    if (response) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Status updated successfully",
+      });
+    }
+
+    // If update fails, throw an error to be caught by next middleware
+    throw next({ message: "Failed to update the status" });
+  },
+
+  /**
+   * Update a label by projectId and labelId.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   */
+  updateLabel: async (req, res, next) => {
+    const { projectId, labelId } = req.params;
+    const { name, color } = req.body;
+
+    // Call service to update label
+    const response = await projectService.updateLabel({
+      name,
+      color,
+      projectId,
+      labelId,
+    });
+
+    if (response) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Label updated successfully",
+      });
+    }
+
+    // If update fails, throw an error to be caught by next middleware
+    throw next({ message: "Failed to update the Label" });
   },
 };

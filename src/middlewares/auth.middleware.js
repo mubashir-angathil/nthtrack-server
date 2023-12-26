@@ -38,7 +38,7 @@ const verifyToken = (req, res, next) => {
   } catch (err) {
     // If the token is expired or invalid, respond with unauthorized status and an error message
     res
-      .status(401)
+      .status(httpStatusCode.UNAUTHORIZED)
       .json({ message: "Token expired or invalid", error: err.name });
   }
 };

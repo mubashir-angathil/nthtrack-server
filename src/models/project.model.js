@@ -87,6 +87,11 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
       as: "tasks",
     });
+    Project.hasMany(models.Status, {
+      foreignKey: "projectId",
+      onDelete: "CASCADE",
+      as: "statuses",
+    });
   };
   // Check is user is admin
   Project.prototype.checkIsAdmin = async function (userId) {

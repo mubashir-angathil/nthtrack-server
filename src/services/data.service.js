@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-catch */
 const { Op } = require("sequelize");
 const {
-  Tracker,
+  Label,
   Status,
   Member,
   User,
@@ -10,22 +10,23 @@ const {
   Notification,
   sequelize,
 } = require("../models/sequelize.model");
-const { formatError } = require("../utils/helpers/helpers");
 module.exports = {
   /**
    * Retrieves a list of tracker from the database.
    *
-   * @returns {Promise<Array>} An array of tracker objects containing 'id' and 'name' attributes.
+   * @returns {Promise<Array>} An array of labels objects containing 'id', color and 'name' attributes.
    * @throws {Error} Throws a formatted error if the operation encounters any issues.
    */
-  getTrackers: async () => {
+  getLabels: async ({ projectId }) => {
     try {
-      const trackers = await Tracker.findAll({
-        attributes: ["id", "name"],
+      const trackers = await Label.findAll({
+        where: {
+          projectId,
+        },
       });
       return trackers;
     } catch (error) {
-      throw formatError(error);
+      throw error;
     }
   },
 
@@ -35,14 +36,17 @@ module.exports = {
    * @returns {Promise<Array>} An array of status objects containing 'id' and 'name' attributes.
    * @throws {Error} Throws a formatted error if the operation encounters any issues.
    */
-  getStatuses: async () => {
+  getTaskCategoriesByProjectId: async ({ projectId }) => {
     try {
       const statuses = await Status.findAll({
-        attributes: ["id", "name"],
+        where: { projectId },
+        attributes: {
+          exclude: ["projectId"],
+        },
       });
       return statuses;
     } catch (error) {
-      throw formatError(error);
+      throw error;
     }
   },
 
@@ -58,7 +62,7 @@ module.exports = {
         attributes: ["id", "name"],
       });
     } catch (error) {
-      throw formatError(error);
+      throw error;
     }
   },
 

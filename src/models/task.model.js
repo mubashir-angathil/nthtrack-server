@@ -7,15 +7,25 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      description: {
+      task: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      trackerId: {
+      description: {
+        type: DataTypes.STRING(500),
+        allowNull: false,
+        validate: {
+          len: {
+            args: [2, 500],
+            msg: "Description name must be between 2 and 500 characters.",
+          },
+        },
+      },
+      labelId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: sequelize.model.Tracker, // table name
+          model: sequelize.model.Label, // table name
           key: "id",
         },
       },
@@ -55,21 +65,12 @@ module.exports = (sequelize, DataTypes) => {
           key: "id",
         },
       },
-      closedBy: {
-        type: DataTypes.INTEGER,
-        defaultValue: null,
-        references: {
-          model: sequelize.model.User,
-          key: "id",
-        },
-      },
     },
     {
       tableName: "tasks",
       paranoid: true,
       timestamps: true,
-      updatedAt: true,
-      deletedAt: "closedAt",
+      deletedAt: false,
     },
   );
 
@@ -79,6 +80,7 @@ module.exports = (sequelize, DataTypes) => {
 
   // Define associations
   Task.associate = (models) => {
+    // Task.sync({ alter: true });
     Task.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",
@@ -94,20 +96,15 @@ module.exports = (sequelize, DataTypes) => {
       as: "updatedByUser",
       onDelete: "CASCADE",
     });
-    Task.belongsTo(models.User, {
-      foreignKey: "closedBy",
-      as: "closedByUser",
-      onDelete: "CASCADE",
-    });
     Task.belongsTo(models.Status, {
       foreignKey: "statusId",
-      onDelete: "RESTRICT",
+      onDelete: "CASCADE",
       as: "status",
     });
-    Task.belongsTo(models.Tracker, {
-      foreignKey: "trackerId",
-      onDelete: "RESTRICT",
-      as: "tracker",
+    Task.belongsTo(models.Label, {
+      foreignKey: "labelId",
+      onDelete: "CASCADE",
+      as: "label",
     });
   };
 

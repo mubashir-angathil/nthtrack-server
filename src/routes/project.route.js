@@ -233,4 +233,62 @@ router.delete(
   tryCatch(projectController.deleteTask),
 );
 
+/**
+ * Route for creating a new label. Requires a valid token for authentication.
+ * POST /api/project/:projectId/label/create
+ */
+router.post(
+  "/:projectId/label/create",
+  verifyToken,
+  tryCatch(projectController.createLabel),
+);
+
+/**
+ * Route for creating a new status. Requires a valid token for authentication.
+ * POST /api/project/:projectId/label/create
+ */
+router.post(
+  "/:projectId/status/create",
+  verifyToken,
+  tryCatch(projectController.createStatus),
+);
+
+/**
+ * Route for deleting status. Requires a valid token for authentication.
+ * POST /api/project/:projectId/status/:statusId/delete
+ */
+router.delete(
+  "/:projectId/status/:statusId/delete",
+  verifyToken,
+  tryCatch(projectController.deleteStatus),
+);
+
+/**
+ * Route for deleting label. Requires a valid token for authentication.
+ * POST /api/project/:projectId/label/:labelId/delete
+ */
+router.delete(
+  "/:projectId/label/:labelId/delete",
+  verifyToken,
+  tryCatch(projectController.deleteLabel),
+);
+
+/**
+ * Route for updating status. Requires a valid token for authentication.
+ * POST /api/project/:projectId/status/:statusId/update
+ */
+router.patch(
+  "/:projectId/status/:statusId/update",
+  verifyToken,
+  tryCatch(projectController.updateStatus),
+);
+/**
+ * Route for updating label. Requires a valid token for authentication.
+ * POST /api/project/:projectId/label/update
+ */
+router.patch(
+  "/:projectId/status/:labelId/update",
+  verifyToken,
+  tryCatch(projectController.updateLabel),
+);
 module.exports = router;
