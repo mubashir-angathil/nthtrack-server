@@ -201,22 +201,9 @@ module.exports = {
       // Use Sequelize model to create a new task
       const task = await Task.create(newTask);
 
-      const createdByUsers = await dataService.getUsersByIds({
-        userIds: task.createdBy,
-      });
+      const taskDetails = await module.exports.getTaskById({ taskId: task.id });
 
-      if (Array.isArray(createdByUsers)) {
-        const [createdByUser] = createdByUsers;
-        // Access the associated user details
-        const createdTaskWithUser = {
-          ...task.get({ plain: true }),
-          createdByUser,
-        };
-
-        return createdTaskWithUser;
-      }
-
-      return task;
+      return taskDetails;
     } catch (error) {
       // Handle errors and format the error message
       throw error;
