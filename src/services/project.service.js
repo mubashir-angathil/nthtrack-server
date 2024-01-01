@@ -1008,15 +1008,37 @@ module.exports = {
    * @param {Object} params - The parameters containing projectId, labelId, name, and color.
    * @returns {number} - The number of updated labels.
    */
-  updateLabel: async ({ name, color, statusId, projectId }) => {
+  updateLabel: async ({ name, color, labelId, projectId }) => {
     try {
       return await Label.update(
         { name, color },
         {
-          where: { id: statusId, projectId },
+          where: { id: labelId, projectId },
         },
       );
     } catch (error) {
+      throw error;
+    }
+  },
+  /**
+   * Retrieves project members with their user details and permissions.
+   * @param {Object} options - Object containing projectId, limit, and offset.
+   * @returns {Promise<Object>} - A promise resolving to an object with the count and rows of project members.
+   * @throws {Error} - Throws an error if an operation fails.
+   */
+  getProjectLabels: async ({ projectId, limit, offset }) => {
+    try {
+      // Use Sequelize's findAndCountAll to get project members with user details and permissions
+      return await Label.findAndCountAll({
+        limit,
+        offset,
+        where: {
+          projectId,
+        },
+        // attributes: ["id", "createdAt", "updatedAt"],
+      });
+    } catch (error) {
+      // If an error occurs, throw the error
       throw error;
     }
   },

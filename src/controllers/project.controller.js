@@ -916,4 +916,39 @@ module.exports = {
     // If update fails, throw an error to be caught by next middleware
     throw next({ message: "Failed to update the Label" });
   },
+  /**
+   * Retrieves project labels with pagination.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  getAllProjectLabels: async (req, res, next) => {
+    // Extract pagination parameters and project ID from request
+    const { limit, page } = req.body;
+    const { projectId } = req.params;
+
+    // Calculate pagination details
+    const pagination = helpers.getCurrentPagination({ page, limit, projectId });
+
+    // Retrieve project members with pagination
+    const labels = await projectService.getProjectLabels({
+      limit: pagination.limit,
+      offset: pagination.offset,
+      projectId,
+    });
+
+    // Send a success response with retrieved project members
+    if (labels) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        totalRows: labels.count,
+        message: "Retrieved project labels successfully.",
+        data: labels.rows,
+      });
+    }
+
+    // If members are not found, trigger the error handler
+    throw next({ message: "Failed to find project labels." });
+  },
 };

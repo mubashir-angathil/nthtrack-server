@@ -234,6 +234,16 @@ router.delete(
 );
 
 /**
+ * Route for get all labels. Requires a valid token for authentication.
+ * POST /api/project/:projectId/labels
+ */
+router.post(
+  "/:projectId/labels",
+  verifyToken,
+  tryCatch(projectController.getAllProjectLabels),
+);
+
+/**
  * Route for creating a new label. Requires a valid token for authentication.
  * POST /api/project/:projectId/label/create
  */
@@ -287,7 +297,7 @@ router.patch(
  * POST /api/project/:projectId/label/update
  */
 router.patch(
-  "/:projectId/status/:labelId/update",
+  "/:projectId/label/:labelId/update",
   verifyToken,
   tryCatch(projectController.updateLabel),
 );
