@@ -1,8 +1,8 @@
 const { labelColors } = require("../utils/constants/Constants");
 
 module.exports = (sequelize, DataTypes) => {
-  const Status = sequelize.define(
-    "Status",
+  const Label = sequelize.define(
+    "Label",
     {
       id: {
         type: DataTypes.INTEGER,
@@ -19,7 +19,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       projectId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
         references: {
           model: sequelize.models.Project,
           key: "id",
@@ -28,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       // Other model options go here
-      tableName: "statuses",
+      tableName: "labels",
       timestamps: false,
       indexes: [
         {
@@ -40,13 +39,13 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
-  Status.associate = (models) => {
-    // Status.sync({ alter: true });
-    Status.belongsTo(models.Project, {
+  Label.associate = (models) => {
+    // Label.sync({ alter: true });
+    Label.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",
       onDelete: "CASCADE",
     });
   };
-  return Status;
+  return Label;
 };

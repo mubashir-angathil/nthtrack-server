@@ -7,16 +7,32 @@ module.exports = (sequelize, DataTypes) => {
       // Model attributes are defined here
       id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true,
-        unique: true,
-      },
-      username: {
-        type: DataTypes.STRING,
         primaryKey: true,
+        autoIncrement: true,
+      },
+      email: {
+        type: DataTypes.STRING,
         allowNull: false,
+        unique: {
+          msg: "email already existed",
+        },
         validate: {
           isEmail: {
             msg: "Please enter a valid email address.",
+          },
+        },
+      },
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: {
+          msg: "Username already taken",
+        },
+        validate: {
+          is: /^[a-zA-Z0-9_]+$/i,
+          len: {
+            args: [2, 15],
+            msg: "",
           },
         },
       },

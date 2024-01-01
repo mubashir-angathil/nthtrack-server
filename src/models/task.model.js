@@ -7,57 +7,103 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      description: {
+      task: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      tracker_id: {
+      description: {
+        type: DataTypes.STRING(500),
+        allowNull: false,
+        validate: {
+          len: {
+            args: [2, 500],
+            msg: "Description name must be between 2 and 500 characters.",
+          },
+        },
+      },
+      labelId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "trackers", // table name
+          model: sequelize.model.Label, // table name
           key: "id",
         },
       },
-      status_id: {
+      statusId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "statuses", // table name
+          model: sequelize.model.Status, // table name
           key: "id",
         },
       },
-      project_id: {
+      projectId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "projects", // table name
+          model: sequelize.model.Project, // table name
+          key: "id",
+        },
+      },
+      assignees: {
+        type: DataTypes.JSON,
+        defaultValue: [],
+      },
+      createdBy: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: sequelize.model.User,
+          key: "id",
+        },
+      },
+      updatedBy: {
+        type: DataTypes.INTEGER,
+        defaultValue: null,
+        references: {
+          model: sequelize.model.User,
           key: "id",
         },
       },
     },
     {
-      // Other model options go here
       tableName: "tasks",
-      paranoid: true,
       timestamps: true,
-      deletedAt: "closedAt",
+      deletedAt: false,
     },
   );
 
+  Task.prototype.getAssignees = async function () {
+    return await this.assignees;
+  };
+
   // Define associations
   Task.associate = (models) => {
+    // Task.sync({ alter: true });
     Task.belongsTo(models.Project, {
-      foreignKey: "project_id",
-      onDelete: "RESTRICT",
+      foreignKey: "projectId",
+      as: "project",
+      onDelete: "CASCADE",
+    });
+    Task.belongsTo(models.User, {
+      foreignKey: "createdBy",
+      as: "createdByUser",
+      onDelete: "CASCADE",
+    });
+    Task.belongsTo(models.User, {
+      foreignKey: "updatedBy",
+      as: "updatedByUser",
+      onDelete: "CASCADE",
     });
     Task.belongsTo(models.Status, {
-      foreignKey: "status_id",
-      onDelete: "RESTRICT",
+      foreignKey: "statusId",
+      onDelete: "CASCADE",
+      as: "status",
     });
-    Task.belongsTo(models.Tracker, {
-      foreignKey: "tracker_id",
-      onDelete: "RESTRICT",
+    Task.belongsTo(models.Label, {
+      foreignKey: "labelId",
+      onDelete: "CASCADE",
+      as: "label",
     });
   };
 
