@@ -951,4 +951,40 @@ module.exports = {
     // If members are not found, trigger the error handler
     throw next({ message: "Failed to find project labels." });
   },
+
+  /**
+   * Retrieves project statuses with pagination.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   * @returns {Promise<void>} - Asynchronous function.
+   */
+  getAllProjectStatuses: async (req, res, next) => {
+    // Extract pagination parameters and project ID from request
+    const { limit, page } = req.body;
+    const { projectId } = req.params;
+
+    // Calculate pagination details
+    const pagination = helpers.getCurrentPagination({ page, limit, projectId });
+
+    // Retrieve project members with pagination
+    const labels = await projectService.getProjectStatuses({
+      limit: pagination.limit,
+      offset: pagination.offset,
+      projectId,
+    });
+
+    // Send a success response with retrieved project members
+    if (labels) {
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        totalRows: labels.count,
+        message: "Retrieved project statuses successfully.",
+        data: labels.rows,
+      });
+    }
+
+    // If members are not found, trigger the error handler
+    throw next({ message: "Failed to find project statuses." });
+  },
 };

@@ -25,14 +25,14 @@ const sequelize = new Sequelize({
   },
 });
 const orderModel = [
-  "label",
+  "permission",
   "user",
   "notification",
-  "permission",
   "project",
+  "label",
   "status",
-  "task",
   "member",
+  "task",
 ];
 fs.readdirSync(__dirname)
   .filter(

@@ -1021,21 +1021,41 @@ module.exports = {
     }
   },
   /**
-   * Retrieves project members with their user details and permissions.
+   * Retrieves project labels.
    * @param {Object} options - Object containing projectId, limit, and offset.
-   * @returns {Promise<Object>} - A promise resolving to an object with the count and rows of project members.
+   * @returns {Promise<Object>} - A promise resolving to an object with the count and rows of project labels.
    * @throws {Error} - Throws an error if an operation fails.
    */
   getProjectLabels: async ({ projectId, limit, offset }) => {
     try {
-      // Use Sequelize's findAndCountAll to get project members with user details and permissions
+      // Use Sequelize's findAndCountAll to get project labels
       return await Label.findAndCountAll({
         limit,
         offset,
         where: {
           projectId,
         },
-        // attributes: ["id", "createdAt", "updatedAt"],
+      });
+    } catch (error) {
+      // If an error occurs, throw the error
+      throw error;
+    }
+  },
+  /**
+   * Retrieves project statuses.
+   * @param {Object} options - Object containing projectId, limit, and offset.
+   * @returns {Promise<Object>} - A promise resolving to an object with the count and rows of project statuses.
+   * @throws {Error} - Throws an error if an operation fails.
+   */
+  getProjectStatuses: async ({ projectId, limit, offset }) => {
+    try {
+      // Use Sequelize's findAndCountAll to get project statuses
+      return await Status.findAndCountAll({
+        limit,
+        offset,
+        where: {
+          projectId,
+        },
       });
     } catch (error) {
       // If an error occurs, throw the error

@@ -12,10 +12,6 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: {
-          args: [["name", "projectId"]],
-          msg: "Status must be unique for a project",
-        },
       },
       color: {
         type: DataTypes.ENUM(labelColors),
@@ -23,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       projectId: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         references: {
           model: sequelize.models.Project,
           key: "id",
@@ -33,11 +30,18 @@ module.exports = (sequelize, DataTypes) => {
       // Other model options go here
       tableName: "statuses",
       timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["name", "projectId"],
+          name: "name",
+        },
+      ],
     },
   );
 
   Status.associate = (models) => {
-    Status.sync({ alter: true });
+    // Status.sync({ alter: true });
     Status.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",

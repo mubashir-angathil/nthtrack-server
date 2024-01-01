@@ -244,6 +244,16 @@ router.post(
 );
 
 /**
+ * Route for get all status. Requires a valid token for authentication.
+ * POST /api/project/:projectId/labels
+ */
+router.post(
+  "/:projectId/statuses",
+  verifyToken,
+  tryCatch(projectController.getAllProjectStatuses),
+);
+
+/**
  * Route for creating a new label. Requires a valid token for authentication.
  * POST /api/project/:projectId/label/create
  */

@@ -12,10 +12,6 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: {
-          args: [["name", "projectId"]],
-          msg: "Label must be unique for a project",
-        },
       },
       color: {
         type: DataTypes.ENUM(labelColors),
@@ -33,6 +29,13 @@ module.exports = (sequelize, DataTypes) => {
       // Other model options go here
       tableName: "labels",
       timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["name", "projectId"],
+          name: "name",
+        },
+      ],
     },
   );
 
