@@ -14,7 +14,6 @@ const {
 const { Op } = require("sequelize");
 const dataService = require("./data.service");
 const { labelColors } = require("../utils/constants/Constants");
-const helpers = require("../utils/helpers/helpers");
 
 // Exported module containing functions for project and task management
 module.exports = {
@@ -152,8 +151,14 @@ module.exports = {
 
       // Calculate the current task progress of each project
       if (projects.rows.length > 0) {
-        const projectPromises = helpers.calculateProgress(projects.row);
-        projects.rows = await Promise.all(projectPromises);
+        const projectPromises = await projects.rows.map((project) => {
+          const defaultValues = project.toJSON();
+          return {
+            ...defaultValues,
+            currentProgress:
+              (defaultValues.completedTasks / defaultValues.tasksCount) * 100,
+          };
+        });
         projects.rows = await Promise.all(projectPromises);
       }
 
@@ -764,7 +769,14 @@ module.exports = {
 
       // Calculate the current task progress of each project
       if (projects.rows.length > 0) {
-        const projectPromises = helpers.calculateProgress(projects.row);
+        const projectPromises = await projects.rows.map((project) => {
+          const defaultValues = project.toJSON();
+          return {
+            ...defaultValues,
+            currentProgress:
+              (defaultValues.completedTasks / defaultValues.tasksCount) * 100,
+          };
+        });
         projects.rows = await Promise.all(projectPromises);
       }
 

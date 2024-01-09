@@ -2,6 +2,12 @@ const { Sequelize } = require("../../models/sequelize.model");
 const projectService = require("../../services/project.service");
 const { httpStatusCode } = require("../constants/Constants");
 
+// /**
+//  * Calculate the project progress
+//  * @param {Object} projects - The projects containing array of project
+//  * @returns {array} - Returns the projects with current progress
+//  */
+
 module.exports = {
   /**
    * A function to format a Sequelize SQL error for consistent error handling.
@@ -159,20 +165,5 @@ module.exports = {
     }
 
     return project;
-  },
-  /**
-   * Calculate the project progress
-   * @param {Object} projects - The projects containing array of project
-   * @returns {Object} - Returns the projects with current progress
-   */
-  calculateProgress: async (projects) => {
-    return await projects.map((project) => {
-      const defaultValues = project.toJSON();
-      return {
-        ...defaultValues,
-        currentProgress:
-          (defaultValues.completedTasks / defaultValues.tasksCount) * 100,
-      };
-    });
   },
 };
