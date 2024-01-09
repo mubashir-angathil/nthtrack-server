@@ -160,4 +160,19 @@ module.exports = {
 
     return project;
   },
+  /**
+   * Calculate the project progress
+   * @param {Object} projects - The projects containing array of project
+   * @returns {Object} - Returns the projects with current progress
+   */
+  calculateProgress: async (projects) => {
+    return await projects.map((project) => {
+      const defaultValues = project.toJSON();
+      return {
+        ...defaultValues,
+        currentProgress:
+          (defaultValues.completedTasks / defaultValues.tasksCount) * 100,
+      };
+    });
+  },
 };

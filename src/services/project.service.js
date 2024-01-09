@@ -14,6 +14,7 @@ const {
 const { Op } = require("sequelize");
 const dataService = require("./data.service");
 const { labelColors } = require("../utils/constants/Constants");
+const helpers = require("../utils/helpers/helpers");
 
 // Exported module containing functions for project and task management
 module.exports = {
@@ -116,11 +117,45 @@ module.exports = {
               sequelize.literal(
                 "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
               ),
-              "taskCount",
+              "tasksCount",
+            ],
+            [
+              sequelize.literal(
+                `
+                (SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id AND tasks.statusId = 
+                (SELECT MAX(statuses.id) FROM statuses WHERE statuses.projectId = Project.id))
+                `,
+              ),
+              "completedTasks",
+            ],
+            [
+              sequelize.literal(
+                `
+                (
+                  SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT('id', users.id, 'email', users.email, 'username', users.username)
+                  )
+                  FROM users
+                  WHERE users.id IN (
+                    SELECT members.userId
+                    FROM members
+                    WHERE members.projectId = Project.id
+                  )
+                )
+                `,
+              ),
+              "contributors",
             ],
           ],
         },
       });
+
+      // Calculate the current task progress of each project
+      if (projects.rows.length > 0) {
+        const projectPromises = helpers.calculateProgress(projects.row);
+        projects.rows = await Promise.all(projectPromises);
+        projects.rows = await Promise.all(projectPromises);
+      }
 
       return projects;
     } catch (error) {
@@ -128,7 +163,6 @@ module.exports = {
       throw error;
     }
   },
-
   /**
    * Function to get a project by ID.
    *
@@ -694,12 +728,45 @@ module.exports = {
               sequelize.literal(
                 "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
               ),
-              "taskCount",
+              "tasksCount",
+            ],
+            [
+              sequelize.literal(
+                `
+                (SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id AND tasks.statusId = 
+                (SELECT MAX(statuses.id) FROM statuses WHERE statuses.projectId = Project.id))
+                `,
+              ),
+              "completedTasks",
+            ],
+            [
+              sequelize.literal(
+                `
+                (
+                  SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT('id', users.id, 'email', users.email, 'username', users.username)
+                  )
+                  FROM users
+                  WHERE users.id IN (
+                    SELECT members.userId
+                    FROM members
+                    WHERE members.projectId = Project.id
+                  )
+                )
+                `,
+              ),
+              "contributors",
             ],
           ],
           exclude: ["statusId"],
         },
       });
+
+      // Calculate the current task progress of each project
+      if (projects.rows.length > 0) {
+        const projectPromises = helpers.calculateProgress(projects.row);
+        projects.rows = await Promise.all(projectPromises);
+      }
 
       return projects;
     } catch (error) {
