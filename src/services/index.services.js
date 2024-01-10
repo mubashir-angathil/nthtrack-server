@@ -55,4 +55,21 @@ module.exports = {
       throw error;
     }
   },
+  /**
+   * Function to delete the account.
+   *
+   * @param {Object} Options - Options including the userId.
+   * @returns {Promise<Array>} - A promise resolving to an array of projects.
+   * @throws {Object} - Throws a error in case of failure.
+   */
+  deleteAccount: ({ userId }) => {
+    try {
+      const profile = User.destroy({
+        where: { id: userId },
+      });
+      return profile;
+    } catch (error) {
+      throw error;
+    }
+  },
 };

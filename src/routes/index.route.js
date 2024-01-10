@@ -25,4 +25,14 @@ router.patch(
   tryCatch(indexController.updateProfileDetails),
 );
 
+/**
+ * Route for delete account. Requires a valid token for authentication.
+ * POST /api/account/:userId/delete
+ */
+router.delete(
+  "/account/:userId/delete",
+  verifyToken,
+  tryCatch(indexController.deleteAccount),
+);
+
 module.exports = router;
