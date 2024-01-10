@@ -23,13 +23,33 @@ module.exports = {
             ],
             [
               sequelize.literal(
-                "(SELECT COUNT(id) FROM members WHERE members.projectId != (SELECT projectId FROM projects WHERE projects.createdBy = User.id))",
+                "(SELECT COUNT(id) FROM members WHERE members.projectId NOT IN (SELECT projectId FROM projects WHERE projects.createdBy = User.id))",
               ),
               "totalContributedProjects",
             ],
           ],
         },
       });
+      return profile;
+    } catch (error) {
+      throw error;
+    }
+  },
+  /**
+   * Function to update profile details.
+   *
+   * @param {Object} Options - Options including the userId, and username.
+   * @returns {Promise<Array>} - A promise resolving to an array of projects.
+   * @throws {Object} - Throws a error in case of failure.
+   */
+  updateProfileDetails: ({ userId, username }) => {
+    try {
+      const profile = User.update(
+        { username },
+        {
+          where: { id: userId },
+        },
+      );
       return profile;
     } catch (error) {
       throw error;

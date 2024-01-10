@@ -15,4 +15,14 @@ router.get(
   tryCatch(indexController.getProfileDetails),
 );
 
+/**
+ * Route for update user profile details. Requires a valid token for authentication.
+ * POST /api/user/:userId/profile/update
+ */
+router.patch(
+  "/user/:userId/profile/update",
+  verifyToken,
+  tryCatch(indexController.updateProfileDetails),
+);
+
 module.exports = router;

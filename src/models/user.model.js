@@ -29,10 +29,13 @@ module.exports = (sequelize, DataTypes) => {
           msg: "Username already taken",
         },
         validate: {
-          is: /^[a-zA-Z0-9_]+$/i,
+          is: {
+            args: /^[a-zA-Z0-9_ ]+$/i,
+            msg: "Formate does not match",
+          },
           len: {
             args: [2, 15],
-            msg: "",
+            msg: "Username must 2 to 15 characters",
           },
         },
       },
