@@ -35,4 +35,24 @@ router.delete(
   tryCatch(indexController.deleteAccount),
 );
 
+/**
+ * Route for retrieving user notifications. Requires a valid token for authentication.
+ * GET /api/user/notifications
+ */
+router.get(
+  "/user/notifications",
+  verifyToken,
+  tryCatch(indexController.getNotifications),
+);
+
+/**
+ * Route for mark notification as read initiation. Requires a valid token for authentication.
+ * POST /api/user/notifications/read
+ */
+router.patch(
+  "/user/notifications/read",
+  verifyToken,
+  tryCatch(indexController.markNotificationAsRead),
+);
+
 module.exports = router;

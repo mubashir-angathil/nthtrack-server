@@ -3,8 +3,8 @@
 // Import required modules
 const { Server } = require("socket.io");
 const { consola } = require("consola");
-const dataService = require("../services/data.service");
-const projectService = require("../services/project.service");
+// const dataService = require("../services/data.service");
+// const indexServices = require("../services/index.services");
 
 // Create a new Socket.IO server instance with CORS configuration
 const io = new Server(null, {
@@ -24,41 +24,17 @@ io.on("connection", (socket) => {
   });
 
   // Handle joining a room event
-  socket.on("join-room", async ({ roomIds, userId }) => {
+  socket.on("join-room", async ({ roomIds, broadcastIds }) => {
     // Join the specified rooms
     socket.join(roomIds);
-
     // Get the new notification count asynchronously
-    const newNotificationCount = await dataService.getNotificationCount({
-      roomIds,
-      userId,
-    });
+    // const newNotificationCount = await dataService.getNotificationCount({
+    //   roomIds,
+    //   broadcastIds,
+    // });
 
     // Emit the new notification count to the connected socket
-    socket.emit("receive-notifications", newNotificationCount);
-  });
-
-  // Handle pushing a notification event
-  socket.on("push-notification", async ({ message, userId, broadcastId }) => {
-    // Check the validity of the input data
-    if (
-      typeof broadcastId === "number" &&
-      typeof message === "string" &&
-      typeof userId === "number"
-    ) {
-      try {
-        // Create a new notification and broadcast the count to the room
-        await projectService.createNotification({
-          message,
-          broadcastId,
-          createdBy: userId,
-        });
-        socket.to(broadcastId).emit("receive-notifications", 1);
-      } catch (err) {
-        // Log errors if notification creation fails
-        consola.log(err);
-      }
-    }
+    socket.emit("push-notifications", 1);
   });
 
   // Handle disconnection event

@@ -1,5 +1,7 @@
 const { Sequelize } = require("../../models/sequelize.model");
+const indexServices = require("../../services/index.services");
 const projectService = require("../../services/project.service");
+const { socketHelper } = require("../../socket/Helper");
 const { httpStatusCode } = require("../constants/Constants");
 
 // /**
@@ -146,7 +148,7 @@ module.exports = {
   }) => {
     const project = await projectService.getProjectById({ projectId });
     const isAdmin = await project.checkIsAdmin(userId);
-    const superAdminPermission = await projectService.getPermissionByName({
+    const superAdminPermission = await indexServices.getPermissionByName({
       permission: "Super Admin",
     });
 
@@ -165,5 +167,108 @@ module.exports = {
     }
 
     return project;
+  },
+
+  /**
+   * Get contributor IDs excluding the current user.
+   *
+   * @param {Object} project - Project object.
+   * @param {number} userId - ID of the current user.
+   * @returns {Array<number>} An array of contributor IDs.
+   */
+  getContributorIds: (project, userId) => {
+    return project.contributors
+      .map((user) => (user.id !== userId ? user.id : undefined))
+      .filter((id) => id !== undefined);
+  },
+
+  /**
+   * Gets the broadcast IDs of assignees, excluding the author.
+   *
+   * @param {Array} assignees - The array of assignees.
+   * @param {number} authorId - The author's user ID.
+   * @returns {Array} - An array of broadcast IDs.
+   */
+  getAssigneesBroadcastIds: (assignees, authorId) => {
+    return assignees
+      .map((assignee) => (assignee.id !== authorId ? assignee.id : undefined))
+      .filter((broadcastId) => broadcastId !== undefined);
+  },
+
+  /**
+   * Notifies assignees about the deletion of a task.
+   *
+   * @param {Object} task - The task object.
+   * @param {string} projectId - The project ID.
+   * @param {number} authorId - The author's user ID.
+   * @returns {Promise<void>} - A promise resolving once the notifications are sent.
+   */
+  notifyAssigneesAboutTaskDeletion: async (task, projectId, authorId) => {
+    const broadcastIds = module.exports.getAssigneesBroadcastIds(
+      task.assignees,
+      authorId,
+    );
+
+    await socketHelper.pushNotification({
+      type: "General",
+      content: `The task "${task.task}" in the project "${task.project.name}" has been deleted.`,
+      broadcastIds,
+      projectId,
+      author: authorId,
+    });
+  },
+
+  /**
+   * Notifies assignees about updates to a task.
+   *
+   * @param {Object} task - The task object.
+   * @param {string} projectId - The project ID.
+   * @param {number} authorId - The author's user ID.
+   * @param {Array} assignees - The updated array of assignees.
+   * @returns {Promise<void>} - A promise resolving once the notifications are sent.
+   */
+  notifyAssigneesAboutTaskUpdates: async (
+    task,
+    projectId,
+    authorId,
+    assignees,
+  ) => {
+    const assigneesIds = task.assignees.map((assignee) => assignee.id);
+
+    if (assigneesIds.length > assignees?.length) {
+      // Some assignees have been unassigned
+      const unAssignedAssigneesIds = assigneesIds.filter(
+        (assigneeId) => !assignees.includes(assigneeId),
+      );
+      await socketHelper.pushNotification({
+        type: "Mention",
+        content: `You have been unassigned from the task "${task.task}" in the project "${task.project.name}".`,
+        broadcastIds: unAssignedAssigneesIds,
+        projectId,
+        author: authorId,
+      });
+    } else if (assigneesIds.length < assignees.length) {
+      // New assignees have been added
+      const newAssignees = assignees.filter(
+        (assigneesId) => !assigneesIds.includes(assigneesId),
+      );
+
+      await socketHelper.pushNotification({
+        type: "Mention",
+        content: `You have been assigned to the task "${task.task}" in the project "${task.project.name}".`,
+        broadcastIds: newAssignees,
+        projectId,
+        author: authorId,
+      });
+    } else {
+      // Task details have been updated
+      await socketHelper.pushNotification({
+        type: "Mention",
+        content: `Your assigned task "${task.task}" in the project "${task.project.name}" has been updated.`,
+        broadcastIds: assigneesIds,
+        projectId,
+        author: authorId,
+      });
+    }
   },
 };

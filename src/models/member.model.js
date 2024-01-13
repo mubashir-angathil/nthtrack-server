@@ -23,6 +23,11 @@ module.exports = (sequelize, DataTypes) => {
           key: "id",
         },
       },
+      status: {
+        type: DataTypes.ENUM,
+        values: ["Member", "Pending", "Super Admin"],
+        defaultValue: "Pending",
+      },
       userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -37,6 +42,7 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
   Member.associate = (model) => {
+    // Member.sync({ alter: true });
     Member.belongsTo(model.User, {
       foreignKey: "userId",
       as: "user",

@@ -7,17 +7,39 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      message: {
+      type: {
+        type: DataTypes.ENUM,
+        values: ["Invite", "Mention", "General"],
+        defaultValue: "General",
+        required: true,
+      },
+      content: {
         type: DataTypes.STRING,
         required: true,
       },
-      broadcastId: {
-        type: DataTypes.INTEGER,
-        require: true,
-      },
-      readers: {
+      broadcastIds: {
         type: DataTypes.JSON,
         defaultValue: [],
+      },
+      readersIds: {
+        type: DataTypes.JSON,
+        defaultValue: [],
+      },
+      authorId: {
+        type: DataTypes.INTEGER,
+        required: true,
+        references: {
+          model: sequelize.model.User,
+          key: "id",
+        },
+      },
+      projectId: {
+        type: DataTypes.INTEGER,
+        required: false,
+        references: {
+          model: sequelize.model.Project,
+          key: "id",
+        },
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -27,8 +49,22 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       paranoid: true,
+      timestamps: false,
       tableName: "notifications",
     },
   );
+  Notification.associate = (models) => {
+    // Notification.sync({ alter: true });
+    Notification.belongsTo(models.User, {
+      foreignKey: "authorId",
+      as: "author",
+      onDelete: "CASCADE",
+    });
+    Notification.belongsTo(models.Project, {
+      foreignKey: "projectId",
+      as: "project",
+      onDelete: "CASCADE",
+    });
+  };
   return Notification;
 };

@@ -72,16 +72,6 @@ router.get(
 );
 
 /**
- * Route for retrieving user notifications. Requires a valid token for authentication.
- * GET /api/user/notifications
- */
-router.get(
-  "/user/notifications",
-  verifyToken,
-  tryCatch(dataController.getNotifications),
-);
-
-/**
  * Route for retrieving enrolled project IDs for a user. Requires a valid token for authentication.
  * GET /api/team/project/all
  */

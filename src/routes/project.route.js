@@ -180,16 +180,6 @@ router.post(
 );
 
 /**
- * Route for marking all notifications as read. Requires a valid token.
- * PATCH /api/project/notification/all/mark-as-read
- */
-router.patch(
-  "/notification/all/mark-as-read",
-  verifyToken,
-  tryCatch(projectController.markNotificationAsRead),
-);
-
-/**
  * Route for reopening a closed project. Requires a valid token and specific project permissions.
  * PATCH /api/project/:projectId/reopen
  */
@@ -311,4 +301,25 @@ router.patch(
   verifyToken,
   tryCatch(projectController.updateLabel),
 );
+
+/**
+ * Route for accept initiation. Requires a valid token for authentication.
+ * POST /api/project/:projectId/invitation/accept
+ */
+router.patch(
+  "/:projectId/invitation/accept",
+  verifyToken,
+  tryCatch(projectController.acceptProjectInvitation),
+);
+
+/**
+ * Route for accept initiation. Requires a valid token for authentication.
+ * POST /api/project/:projectId/invitation/reject
+ */
+router.patch(
+  "/:projectId/invitation/reject",
+  verifyToken,
+  tryCatch(projectController.rejectProjectInvitation),
+);
+
 module.exports = router;
