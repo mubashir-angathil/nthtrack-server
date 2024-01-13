@@ -3,6 +3,7 @@
 // Import required modules
 const { Server } = require("socket.io");
 const { consola } = require("consola");
+const indexServices = require("../services/index.services");
 // const dataService = require("../services/data.service");
 // const indexServices = require("../services/index.services");
 
@@ -24,17 +25,16 @@ io.on("connection", (socket) => {
   });
 
   // Handle joining a room event
-  socket.on("join-room", async ({ roomIds, broadcastIds }) => {
+  socket.on("join-room", async ({ roomIds, userId }) => {
     // Join the specified rooms
     socket.join(roomIds);
     // Get the new notification count asynchronously
-    // const newNotificationCount = await dataService.getNotificationCount({
-    //   roomIds,
-    //   broadcastIds,
-    // });
+    const newNotificationCount = await indexServices.getUnreadNotificationCount(
+      { userId },
+    );
 
     // Emit the new notification count to the connected socket
-    socket.emit("push-notifications", 1);
+    socket.emit("push-notifications", newNotificationCount);
   });
 
   // Handle disconnection event

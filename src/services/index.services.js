@@ -185,10 +185,14 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to an object with notification data and count.
    * @throws {Error} - Throws an error if the operation fails.
    */
-  getNotifications: async ({ roomIds, type, userId, offset, limit }) => {
+  getNotifications: async ({ type, userId, offset, limit, unread }) => {
     try {
       const whereClause = type && { type };
-
+      const unreadNotifications = unread && {
+        readersIds: sequelize.literal(
+          `NOT JSON_CONTAINS(readersIds, '${userId}')`,
+        ),
+      };
       // Use Sequelize's findAndCountAll to get paginated notification data
       const notificationsData = await Notification.findAndCountAll({
         offset,
@@ -197,6 +201,7 @@ module.exports = {
           // Construct a WHERE clause based on roomIds and userId
           // author: [...roomIds, userId],
           ...whereClause,
+          ...unreadNotifications,
           broadcastIds: sequelize.literal(
             `JSON_CONTAINS(broadcastIds, '${userId}')`,
           ),
@@ -274,6 +279,33 @@ module.exports = {
       return deletedNotificationCount;
     } catch (error) {
       // If an error occurs during the deletion process, throw the error
+      throw error;
+    }
+  },
+
+  /**
+   * Retrieves the count of unread notifications for a given user with the "Mention" type.
+   * @param {Object} options - Options object containing the user ID.
+   * @param {number} options.userId - The ID of the user for whom unread notifications are counted.
+   * @returns {Promise<number>} - A promise resolving to the count of unread notifications.
+   * @throws {Error} - Throws an error if there is an issue with the database query.
+   */
+  getUnreadNotificationCount: async ({ userId }) => {
+    try {
+      // Use Sequelize's count method to count notifications based on specified conditions
+      return await Notification.count({
+        where: {
+          type: "Mention", // Consider only notifications of type "Mention"
+          broadcastIds: sequelize.literal(
+            `JSON_CONTAINS(broadcastIds, '${userId}')`,
+          ), // Check if userId is present in the broadcastIds array
+          readersIds: sequelize.literal(
+            `NOT JSON_CONTAINS(readersIds, '${userId}')`,
+          ), // Ensure userId is not present in the readersIds array
+        },
+      });
+    } catch (error) {
+      // Throw an error if there's an issue with the database query
       throw error;
     }
   },

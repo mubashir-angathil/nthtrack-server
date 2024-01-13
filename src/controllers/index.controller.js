@@ -156,7 +156,7 @@ module.exports = {
    */
   getNotifications: async (req, res, next) => {
     // Extract parameters from the query string
-    const { page, limit, type } = req.query;
+    const { page, limit, type, unread } = req.query;
 
     // Calculate pagination based on provided page and limit
     const pagination = await helpers.getCurrentPagination({ page, limit });
@@ -167,6 +167,7 @@ module.exports = {
       userId: req.user.id, // Assuming user ID is stored in req.user
       offset: pagination.offset,
       limit: pagination.limit,
+      unread,
     });
 
     // Check if notifications were successfully retrieved
