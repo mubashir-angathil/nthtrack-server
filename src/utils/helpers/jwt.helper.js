@@ -22,9 +22,7 @@ module.exports = {
    */
   generateRefreshToken: ({ id, username }) =>
     // Sign the user information with the refresh token secret and set expiration time
-    jwt.sign({ id, username }, REFRESH_TOKEN_SECRET, {
-      expiresIn: "5d",
-    }),
+    jwt.sign({ id, username }, REFRESH_TOKEN_SECRET),
 
   /**
    * Authenticates a JWT token using the provided token and secret.
