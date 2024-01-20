@@ -528,12 +528,12 @@ module.exports = {
     // Check if the task update was successful
     if (isUpdated) {
       // Notify assignees about task updates
-      if (taskDetails.assignees.length > 0) {
+      if (taskDetails?.assignees.length > 0) {
         await helpers.notifyAssigneesAboutTaskUpdates(
           taskDetails,
           projectId,
           authorId,
-          assignees,
+          taskDetails?.assignees,
         );
       }
 
