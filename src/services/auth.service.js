@@ -9,9 +9,9 @@ module.exports = {
    * @returns {Promise<Object>} - A Promise that resolves to the created user.
    * @throws {Error} - Throws an error if validation fails.
    */
-  doSignUp: async ({ username, email, password }) => {
+  doSignUp: async ({ username, email, password, picture }) => {
     try {
-      return await User.create({ username, email, password });
+      return await User.create({ username, email, password, picture });
     } catch (error) {
       throw error;
     }

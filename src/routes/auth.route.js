@@ -16,6 +16,12 @@ router.post("/sign-up", tryCatch(authController.doSignUp));
 router.post("/login", tryCatch(authController.doSignIn));
 
 /**
+ * Route for user login.
+ * POST /api/auth/signIn/google
+ */
+router.post("/signIn/google", tryCatch(authController.doGoogleSignIn));
+
+/**
  * Route for obtaining a new access token.
  * POST /api/auth/token
  */
