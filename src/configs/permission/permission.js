@@ -31,5 +31,23 @@ module.exports.permission = {
         DELETE: true,
       },
     },
+    label: {
+      all: { GET: true },
+      id: {
+        GET: true,
+        POST: true,
+        PUT: true,
+        DELETE: true,
+      },
+    },
+    status: {
+      all: { GET: true },
+      id: {
+        GET: true,
+        POST: true,
+        PUT: true,
+        DELETE: true,
+      },
+    },
   },
 };

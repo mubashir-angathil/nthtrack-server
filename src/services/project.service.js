@@ -649,7 +649,7 @@ module.exports = {
    */
   getPermission: async ({ projectId, userId }) => {
     try {
-      const isAdmin = await Member.findOne({
+      const permission = await Member.findOne({
         where: {
           projectId,
           userId,
@@ -658,16 +658,12 @@ module.exports = {
           {
             model: Permission,
             as: "permission",
-            attributes: {
-              exclude: ["createdAt", "updatedAt"],
-            },
+            attributes: ["name", "json"],
           },
         ],
-        attributes: {
-          exclude: ["createdAt", "updatedAt"],
-        },
+        attributes: ["id"],
       });
-      return isAdmin;
+      return permission;
     } catch (error) {
       throw error;
     }

@@ -1155,4 +1155,26 @@ module.exports = {
       message: "Failed to process the project invitation rejection.",
     });
   },
+  /**
+   * Retrieve a user permission on a project
+   */
+  getPermission: async (req, res, next) => {
+    const projectId = parseInt(req.params.projectId);
+    const userId = req.user.id;
+
+    const permission = await projectService.getPermission({
+      projectId,
+      userId,
+    });
+
+    if (permission) {
+      res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Permission retrieved successfully",
+        data: permission,
+      });
+    } else {
+      next({ message: "Failed to retrieve permission" });
+    }
+  },
 };

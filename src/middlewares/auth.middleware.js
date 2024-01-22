@@ -66,11 +66,9 @@ const validatePermission = (permissionKey) => {
         const isPermitted = await isPathPermissionIncluded({
           permission,
           path: permissionKey,
-          method: req.method,
         });
 
         if (!isPermitted) {
-          console.log("error");
           return next({
             message: "Not permitted",
             httpCode: httpStatusCode.FORBIDDEN,

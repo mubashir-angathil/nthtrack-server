@@ -119,7 +119,8 @@ module.exports = {
 
       current = current[key];
     }
-    return current[method === "PATCH" ? "PUT" : method] === true;
+    // [method === "PATCH" ? "PUT" : method]
+    return current === true;
   },
 
   /**

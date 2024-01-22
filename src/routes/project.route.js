@@ -6,6 +6,7 @@ const {
   validatePermission,
 } = require("../middlewares/auth.middleware");
 const { tryCatch } = require("../utils/helpers/helpers");
+const indexController = require("../controllers/index.controller");
 
 /**
  * Route for creating a new project. Requires a valid token for authentication.
@@ -20,7 +21,7 @@ router.post("/create", verifyToken, tryCatch(projectController.createProject));
 router.patch(
   "/update",
   verifyToken,
-  validatePermission("project.id"),
+  validatePermission("project.id.PUT"),
   tryCatch(projectController.updateProject),
 );
 
@@ -37,7 +38,7 @@ router.get("/all", verifyToken, tryCatch(projectController.getAllProjects));
 router.get(
   "/:projectId",
   verifyToken,
-  validatePermission("project.id"),
+  validatePermission("project.id.GET"),
   tryCatch(projectController.getProjectById),
 );
 
@@ -48,7 +49,7 @@ router.get(
 router.delete(
   "/:projectId/close",
   verifyToken,
-  validatePermission("project.id"),
+  validatePermission("project.id.PUT"),
   tryCatch(projectController.closeProjectById),
 );
 /**
@@ -58,7 +59,7 @@ router.delete(
 router.post(
   "/:projectId/task/create",
   verifyToken,
-  validatePermission("project.task.id"),
+  validatePermission("project.task.id.POST"),
   tryCatch(projectController.createTask),
 );
 
@@ -69,7 +70,7 @@ router.post(
 router.patch(
   "/:projectId/task/update",
   verifyToken,
-  validatePermission("project.id"),
+  validatePermission("project.task.id.PUT"),
   tryCatch(projectController.updateTask),
 );
 
@@ -80,7 +81,7 @@ router.patch(
 router.get(
   "/:projectId/task/all",
   verifyToken,
-  validatePermission("project.task.all"),
+  validatePermission("project.task.all.GET"),
   tryCatch(projectController.getAllTasks),
 );
 
@@ -91,19 +92,8 @@ router.get(
 router.get(
   "/:projectId/task/:taskId",
   verifyToken,
-  validatePermission("project.task.id"),
+  validatePermission("project.task.id.GET"),
   tryCatch(projectController.getTaskById),
-);
-
-/**
- * Route for closing a specific task within a project. Requires a valid token and specific project task permissions.
- * DELETE /api/project/:projectId/task/:taskId/close
- */
-router.delete(
-  "/:projectId/task/:taskId/close",
-  verifyToken,
-  validatePermission("project.task.id"),
-  tryCatch(projectController.closeTaskById),
 );
 
 /**
@@ -113,7 +103,7 @@ router.delete(
 router.post(
   "/:projectId/member/add",
   verifyToken,
-  validatePermission("project.member.id"),
+  validatePermission("project.member.id.POST"),
   tryCatch(projectController.addMember),
 );
 
@@ -124,7 +114,7 @@ router.post(
 router.put(
   "/:projectId/member/update",
   verifyToken,
-  validatePermission("project.member.id"),
+  validatePermission("project.member.id.PUT"),
   tryCatch(projectController.updateMember),
 );
 
@@ -135,7 +125,7 @@ router.put(
 router.delete(
   "/:projectId/member/:memberId/delete",
   verifyToken,
-  validatePermission("project.member.id"),
+  validatePermission("project.member.id.DELETE"),
   tryCatch(projectController.removeMember),
 );
 
@@ -146,7 +136,7 @@ router.delete(
 router.post(
   "/permission/create",
   verifyToken,
-  tryCatch(projectController.createPermission),
+  tryCatch(indexController.createPermission),
 );
 
 /**
@@ -156,7 +146,7 @@ router.post(
 router.patch(
   "/permission/:permissionId/update",
   verifyToken,
-  tryCatch(projectController.updatePermission),
+  tryCatch(indexController.updatePermission),
 );
 
 /**
@@ -176,6 +166,7 @@ router.get(
 router.post(
   "/:projectId/members",
   verifyToken,
+  validatePermission("project.member.all.GET"),
   tryCatch(projectController.getProjectMembers),
 );
 
@@ -186,7 +177,7 @@ router.post(
 router.patch(
   "/:projectId/reopen",
   verifyToken,
-  validatePermission("project.id"),
+  validatePermission("project.id.UPDATE"),
   tryCatch(projectController.restoreProject),
 );
 
@@ -197,19 +188,8 @@ router.patch(
 router.delete(
   "/:projectId/delete",
   verifyToken,
-  validatePermission("project.id"),
+  validatePermission("project.id.DELETE"),
   tryCatch(projectController.deleteProject),
-);
-
-/**
- * Route for reopening a closed task within a project. Requires a valid token and specific task permissions.
- * PATCH /api/project/:projectId/task/:taskId/reopen
- */
-router.patch(
-  "/:projectId/task/:taskId/reopen",
-  verifyToken,
-  validatePermission("project.task.id"),
-  tryCatch(projectController.restoreClosedTask),
 );
 
 /**
@@ -219,7 +199,7 @@ router.patch(
 router.delete(
   "/:projectId/task/:taskId/delete",
   verifyToken,
-  validatePermission("project.task.id"),
+  validatePermission("project.task.id.DELETE"),
   tryCatch(projectController.deleteTask),
 );
 
@@ -230,6 +210,7 @@ router.delete(
 router.post(
   "/:projectId/labels",
   verifyToken,
+  validatePermission("project.label.all.GET"),
   tryCatch(projectController.getAllProjectLabels),
 );
 
@@ -240,6 +221,7 @@ router.post(
 router.post(
   "/:projectId/statuses",
   verifyToken,
+  validatePermission("project.status.all.GET"),
   tryCatch(projectController.getAllProjectStatuses),
 );
 
@@ -250,6 +232,7 @@ router.post(
 router.post(
   "/:projectId/label/create",
   verifyToken,
+  validatePermission("project.label.id.POST"),
   tryCatch(projectController.createLabel),
 );
 
@@ -260,6 +243,7 @@ router.post(
 router.post(
   "/:projectId/status/create",
   verifyToken,
+  validatePermission("project.status.id.POST"),
   tryCatch(projectController.createStatus),
 );
 
@@ -270,6 +254,7 @@ router.post(
 router.delete(
   "/:projectId/status/:statusId/delete",
   verifyToken,
+  validatePermission("project.status.id.DELETE"),
   tryCatch(projectController.deleteStatus),
 );
 
@@ -280,6 +265,7 @@ router.delete(
 router.delete(
   "/:projectId/label/:labelId/delete",
   verifyToken,
+  validatePermission("project.label.id.DELETE"),
   tryCatch(projectController.deleteLabel),
 );
 
@@ -290,6 +276,7 @@ router.delete(
 router.patch(
   "/:projectId/status/:statusId/update",
   verifyToken,
+  validatePermission("project.status.id.PUT"),
   tryCatch(projectController.updateStatus),
 );
 /**
@@ -299,6 +286,7 @@ router.patch(
 router.patch(
   "/:projectId/label/:labelId/update",
   verifyToken,
+  validatePermission("project.label.id.PUT"),
   tryCatch(projectController.updateLabel),
 );
 
@@ -322,4 +310,9 @@ router.patch(
   tryCatch(projectController.rejectProjectInvitation),
 );
 
+router.get(
+  "/:projectId/permission/user",
+  verifyToken,
+  tryCatch(projectController.getPermission),
+);
 module.exports = router;
