@@ -9,7 +9,7 @@ module.exports = () => {
   schedule.scheduleJob("0 */15 * * *", async () => {
     try {
       // Execute the function to delete old notifications
-      await indexServices.getNotifications();
+      await indexServices.deleteOldNotifications();
       consola.success({
         message: "Successfully deleted old notifications:",
         badge: true,
