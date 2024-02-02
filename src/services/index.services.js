@@ -99,7 +99,7 @@ module.exports = {
             ],
             [
               sequelize.literal(
-                "(SELECT COUNT(id) FROM members WHERE members.projectId NOT IN (SELECT projectId FROM projects WHERE projects.createdBy = User.id))",
+                "(SELECT COUNT(id) FROM members WHERE members.userId = User.id AND members.status != 'Pending' AND members.projectId NOT IN (SELECT id from projects WHERE projects.createdBy = User.id))",
               ),
               "totalContributedProjects",
             ],

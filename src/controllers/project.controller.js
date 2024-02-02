@@ -755,6 +755,11 @@ module.exports = {
     const userId = parseInt(req.query.userId);
     const authorId = parseInt(req.user.id);
 
+    // Prevent self remove
+    if (userId === authorId) {
+      throw next({ message: "You cannot remove yourself from this project." });
+    }
+
     // Retrieve the project by ID
     const project = await projectService.getProjectById({ projectId });
 
@@ -772,6 +777,7 @@ module.exports = {
     const response = await projectService.removeMember({
       projectId,
       memberId,
+      userId,
     });
 
     // Check if the member removal was successful

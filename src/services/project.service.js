@@ -579,8 +579,24 @@ module.exports = {
    * @returns {Promise<number>} - A promise resolving to the number of affected rows (0 or 1).
    * @throws {Error} - Throws an error if the removal fails.
    */
-  removeMember: async ({ projectId, memberId }) => {
+  removeMember: async ({ projectId, memberId, userId }) => {
     try {
+      // Fetch all tasks related to the project
+      const tasks = await Task.findAll({
+        where: {
+          projectId,
+          assignees: sequelize.literal(`JSON_CONTAINS(assignees, '${userId}')`),
+        },
+      });
+
+      // remove user from all assigned task
+      if (tasks.length > 0) {
+        await tasks.forEach((task) => {
+          task.assignees = task.assignees.filter((id) => id !== userId);
+          task.save();
+        });
+      }
+
       // Use Sequelize's destroy method to remove a member from a project
       const removedRowsCount = await Member.destroy({
         where: { id: memberId, projectId },
@@ -698,7 +714,7 @@ module.exports = {
           createdBy: teamId,
           id: [
             sequelize.literal(
-              `(SELECT projectId FROM members WHERE members.userId = ${userId})`,
+              `(SELECT projectId FROM members WHERE members.userId = ${userId} AND members.status != 'Pending')`,
             ),
           ],
         },
@@ -732,6 +748,7 @@ module.exports = {
                     SELECT members.userId
                     FROM members
                     WHERE members.projectId = Project.id 
+                    AND members.status != 'Pending'  
                   )
                 )
                 `,

@@ -131,6 +131,9 @@ module.exports = {
       const members = await Member.findAll({
         where: {
           projectId,
+          status: {
+            [Op.not]: "Pending",
+          },
         },
         include: [
           {
@@ -203,7 +206,7 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to an object with user data.
    * @throws {Error} - Throws an error if the operation fails.
    */
-  getUsers: async ({ offset, limit, searchKey }) => {
+  getUsers: async ({ offset, limit, searchKey, projectId }) => {
     try {
       // Construct a WHERE clause based on the searchKey, if provided
       const whereClause = searchKey
@@ -222,6 +225,16 @@ module.exports = {
         attributes: ["id", "username", "email"],
         where: whereClause,
       });
+
+      if (projectId) {
+        const membersIds = await Member.findAll({
+          where: { projectId, status: { [Op.not]: "Pending" } },
+          attributes: ["userId"],
+        });
+        usersData.rows = await usersData.rows.filter((user) => {
+          return !membersIds.some((ids) => ids.userId === user.id);
+        });
+      }
 
       // Return the result, including the count and user data
       return usersData;

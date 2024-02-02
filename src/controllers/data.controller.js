@@ -183,7 +183,7 @@ module.exports = {
    */
   getUsers: async (req, res, next) => {
     // Extract parameters from the request body
-    const { limit, page, searchKey } = req.body;
+    const { limit, page, searchKey, projectId } = req.body;
 
     // Calculate pagination based on provided limit and page
     const pagination = getCurrentPagination({ page, limit });
@@ -193,6 +193,7 @@ module.exports = {
       limit: pagination.limit,
       offset: pagination.offset,
       searchKey,
+      projectId,
     });
 
     // Check if users were successfully retrieved
