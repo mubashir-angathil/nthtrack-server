@@ -53,15 +53,37 @@ module.exports = {
   /**
    * Retrieve all permissions.
    *
+   * @param {Object} options - An object containing options for retrieving permissions.
+   * @param {number} options.projectId - The ID of the project for which permissions are being retrieved.
    * @returns {Promise<Array>} A promise that resolves with an array containing permission details.
    * @throws Will throw an error if there's an issue with the operation.
    */
-  getPermissions: async () => {
+  getPermissions: async ({ projectId }) => {
     try {
-      return await Permission.findAll({
+      // Retrieve all permissions
+      let permissions = await Permission.findAll({
         attributes: ["id", "name"],
       });
+
+      // If projectId is provided, filter out Super Admin permission
+      if (projectId) {
+        // Find Super Admin member for the project
+        const superAdmin = await Member.findOne({
+          where: { projectId, status: "Super Admin" },
+          attributes: ["permissionId"],
+        });
+
+        // Filter out Super Admin permission if it exists
+        if (superAdmin) {
+          permissions = await permissions.filter((permission) => {
+            return superAdmin.permissionId !== permission.id;
+          });
+        }
+      }
+
+      return permissions;
     } catch (error) {
+      // Throw error if there's an issue with the operation
       throw error;
     }
   },

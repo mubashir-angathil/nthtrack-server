@@ -160,8 +160,12 @@ module.exports = {
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
   getPermissions: async (req, res, next) => {
+    const projectId = req.params?.projectId
+      ? parseInt(req.params.projectId)
+      : undefined;
+
     // Retrieve permissions from the data service
-    const permissions = await dataService.getPermissions();
+    const permissions = await dataService.getPermissions({ projectId });
 
     // Check if the retrieval was successful
     if (permissions) {

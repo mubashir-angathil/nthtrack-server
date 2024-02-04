@@ -45,7 +45,7 @@ router.get("/teams", verifyToken, tryCatch(dataController.getMemberTeams));
  * GET /api/permissions
  */
 router.get(
-  "/permissions",
+  "/project/:projectId/permissions",
   verifyToken,
   tryCatch(dataController.getPermissions),
 );

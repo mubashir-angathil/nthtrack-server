@@ -571,7 +571,7 @@ module.exports = {
     });
 
     if (response) {
-      if (task.assignee.length > 0) {
+      if (task.assignee && task.assignee.length > 0) {
         // Notify assignees about the task deletion
         await helpers.notifyAssigneesAboutTaskDeletion(
           task,
