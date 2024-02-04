@@ -13,6 +13,7 @@ Welcome to "Nth Track" – an advanced project management system designed to str
     - [Install the Packages](#install-the-packages)
     - [Setup Environment Variables](#setup-environment-variables)
   - [Starting the Server](#starting-the-server)
+  - [Technologies Used](#technologies-used)
 
 ## Getting Started
 
@@ -65,3 +66,10 @@ REFRESH_TOKEN_SECRET=<refresh_token_secret>
   ```
   npm run dev
   ```
+### Technologies Used
+- Node.js
+- Express
+- Sequelize ORM
+- MSSQL
+- Socket.io
+- JWT
