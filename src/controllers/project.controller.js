@@ -320,7 +320,6 @@ module.exports = {
           type: "General",
           content: `The project "${project.name}" has been deleted.`,
           broadcastIds,
-          projectId,
           author: userId,
         });
       }
