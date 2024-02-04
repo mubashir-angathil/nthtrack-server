@@ -29,12 +29,19 @@ module.exports = (sequelize, DataTypes) => {
           msg: "Username already taken",
         },
         validate: {
-          is: /^[a-zA-Z0-9_]+$/i,
+          is: {
+            args: /^[a-zA-Z ]+$/i,
+            msg: "Username can only contain letters, spaces",
+          },
           len: {
             args: [2, 15],
-            msg: "",
+            msg: "Username must be between 2 and 15 characters long",
           },
         },
+      },
+      picture: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       password: {
         type: DataTypes.STRING(64),

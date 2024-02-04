@@ -8,12 +8,12 @@ const {
   Label,
   Permission,
   sequelize,
-  Notification,
 } = require("../models/sequelize.model");
 
 const { Op } = require("sequelize");
 const dataService = require("./data.service");
 const { labelColors } = require("../utils/constants/Constants");
+const indexServices = require("./index.services");
 
 // Exported module containing functions for project and task management
 module.exports = {
@@ -33,7 +33,7 @@ module.exports = {
         createdBy,
       });
 
-      const adminPermission = await module.exports.getPermissionByName({
+      const adminPermission = await indexServices.getPermissionByName({
         permission: "Super Admin",
       });
 
@@ -41,6 +41,7 @@ module.exports = {
         await module.exports.addMember({
           projectId: newProject.id,
           userId: createdBy,
+          status: "Super Admin",
           permissionId: adminPermission.id,
         });
       } else {
@@ -116,11 +117,51 @@ module.exports = {
               sequelize.literal(
                 "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
               ),
-              "taskCount",
+              "tasksCount",
+            ],
+            [
+              sequelize.literal(
+                `
+                (SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id AND tasks.statusId = 
+                (SELECT MAX(statuses.id) FROM statuses WHERE statuses.projectId = Project.id))
+                `,
+              ),
+              "completedTasks",
+            ],
+            [
+              sequelize.literal(
+                `
+                (
+                  SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT('id', users.id, 'email', users.email, 'username', users.username)
+                  )
+                  FROM users
+                  WHERE users.id IN (
+                    SELECT members.userId
+                    FROM members
+                    WHERE members.projectId = Project.id AND members.status in ("Member","Super Admin") 
+                  )
+                )
+                `,
+              ),
+              "contributors",
             ],
           ],
         },
       });
+
+      // Calculate the current task progress of each project
+      if (projects.rows.length > 0) {
+        const projectPromises = await projects.rows.map((project) => {
+          const defaultValues = project.toJSON();
+          return {
+            ...defaultValues,
+            currentProgress:
+              (defaultValues.completedTasks / defaultValues.tasksCount) * 100,
+          };
+        });
+        projects.rows = await Promise.all(projectPromises);
+      }
 
       return projects;
     } catch (error) {
@@ -128,7 +169,6 @@ module.exports = {
       throw error;
     }
   },
-
   /**
    * Function to get a project by ID.
    *
@@ -163,6 +203,28 @@ module.exports = {
             as: "closedByUser",
           },
         ],
+        attributes: {
+          include: [
+            [
+              sequelize.literal(
+                `
+              (
+                SELECT JSON_ARRAYAGG(
+                  JSON_OBJECT('id', users.id, 'email', users.email, 'username', users.username)
+                )
+                FROM users
+                WHERE users.id IN (
+                  SELECT members.userId
+                  FROM members
+                  WHERE members.projectId = Project.id AND members.status in ("Member","Super Admin") 
+                )
+              )
+              `,
+              ),
+              "contributors",
+            ],
+          ],
+        },
       });
     } catch (error) {
       // Handle errors and format the error message
@@ -370,6 +432,11 @@ module.exports = {
             as: "updatedByUser",
             attributes: ["id", "username", "email"],
           },
+          {
+            model: Project,
+            as: "project",
+            attributes: ["id", "name"],
+          },
         ],
         attributes: {
           exclude: [
@@ -461,13 +528,14 @@ module.exports = {
    * @returns {Promise<Array>} A promise that resolves with an array containing the member details.
    * @throws Will throw an error if there's an issue with the operation.
    */
-  addMember: async ({ projectId, userId, permissionId }) => {
+  addMember: async ({ projectId, userId, permissionId, status }) => {
     try {
       return Member.findOrCreate({
         where: { projectId, userId },
         defaults: {
           projectId,
           userId,
+          status,
           permissionId,
         },
       });
@@ -486,11 +554,12 @@ module.exports = {
    * @returns {Promise<Array>} A promise that resolves with an array containing the member details.
    * @throws Will throw an error if there's an issue with the operation.
    */
-  updateMember: async ({ projectId, memberId, permissionId }) => {
+  updateMember: async ({ projectId, memberId, permissionId, status }) => {
     try {
       const response = await Member.update(
         {
           permissionId,
+          status,
         },
         {
           where: { id: memberId, projectId },
@@ -510,8 +579,24 @@ module.exports = {
    * @returns {Promise<number>} - A promise resolving to the number of affected rows (0 or 1).
    * @throws {Error} - Throws an error if the removal fails.
    */
-  removeMember: async ({ projectId, memberId }) => {
+  removeMember: async ({ projectId, memberId, userId }) => {
     try {
+      // Fetch all tasks related to the project
+      const tasks = await Task.findAll({
+        where: {
+          projectId,
+          assignees: sequelize.literal(`JSON_CONTAINS(assignees, '${userId}')`),
+        },
+      });
+
+      // remove user from all assigned task
+      if (tasks.length > 0) {
+        await tasks.forEach((task) => {
+          task.assignees = task.assignees.filter((id) => id !== userId);
+          task.save();
+        });
+      }
+
       // Use Sequelize's destroy method to remove a member from a project
       const removedRowsCount = await Member.destroy({
         where: { id: memberId, projectId },
@@ -524,21 +609,22 @@ module.exports = {
       throw error;
     }
   },
-
   /**
-   * Create a new permission.
-   *
-   * @param {Object} param - Parameters for creating a permission.
-   * @param {string} param.name - The name of the permission.
-   * @param {string} param.json - The JSON representation of the permission.
-   * @returns {Promise<Object>} A promise that resolves with the created permission.
-   * @throws Will throw an error if there's an issue with the operation.
+   * Retrieve a member details by using projectId and userId.
+   * @param {Object} options - The options object.
+   * @param {number} options.projectId - The ID of the project from which to retrieve the member.
+   * @param {number} options.userId - The ID of the user to be retrieve.
+   * @returns {Promise<number>} - A promise resolving to the number of affected rows (0 or 1).
+   * @throws {Error} - Throws an error if the removal fails.
    */
-  createPermission: async ({ name, json }) => {
+  getMemberId: async ({ projectId, userId }) => {
     try {
-      const response = await Permission.create({ name, json });
-      return response;
+      // Use Sequelize's destroy method to remove a member from a project
+      return await Member.findOne({
+        where: { userId, projectId },
+      });
     } catch (error) {
+      // If an error occurs during the removal process, throw the error
       throw error;
     }
   },
@@ -579,7 +665,7 @@ module.exports = {
    */
   getPermission: async ({ projectId, userId }) => {
     try {
-      const isAdmin = await Member.findOne({
+      const permission = await Member.findOne({
         where: {
           projectId,
           userId,
@@ -588,68 +674,13 @@ module.exports = {
           {
             model: Permission,
             as: "permission",
-            attributes: {
-              exclude: ["createdAt", "updatedAt"],
-            },
+            attributes: ["name", "json"],
           },
         ],
-        attributes: {
-          exclude: ["createdAt", "updatedAt"],
-        },
+        attributes: ["id"],
       });
-      return isAdmin;
+      return permission;
     } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Retrieves a permission by its name.
-   * @param {Object} options - The options object.
-   * @param {string} options.permission - The name of the permission to retrieve.
-   * @returns {Promise<Permission | null>} - A promise resolving to the retrieved permission or null if not found.
-   * @throws {Error} - Throws an error if the retrieval fails.
-   */
-  getPermissionByName: async ({ permission }) => {
-    try {
-      // Use Sequelize's findOne method to retrieve a permission by its name
-      const retrievedPermission = await Permission.findOne({
-        where: { name: permission },
-      });
-
-      // Return the retrieved permission or null if not found
-      return retrievedPermission;
-    } catch (error) {
-      // If an error occurs during the retrieval process, throw the error
-      throw error;
-    }
-  },
-
-  /**
-   * Update permission details by ID.
-   *
-   * @param {Object} param - Parameters for updating permission details.
-   * @param {string} param.permissionId - The ID of the permission.
-   * @param {string} param.name - The new name for the permission.
-   * @param {string} param.json - The new JSON representation for the permission.
-   * @returns {Promise<number>} A promise that resolves with the number of updated permissions.
-   * @throws Will throw an error if there's an issue with the operation.
-   */
-  updatePermission: async ({ permissionId, name, json }) => {
-    try {
-      // Use Sequelize model to update an existing permission
-      const [updatedPermission] = await Permission.update(
-        {
-          name,
-          json,
-        },
-        {
-          where: { id: permissionId },
-        },
-      );
-      return updatedPermission;
-    } catch (error) {
-      // Handle errors and format the error message
       throw error;
     }
   },
@@ -683,7 +714,7 @@ module.exports = {
           createdBy: teamId,
           id: [
             sequelize.literal(
-              `(SELECT projectId FROM members WHERE members.userId = ${userId})`,
+              `(SELECT projectId FROM members WHERE members.userId = ${userId} AND members.status != 'Pending')`,
             ),
           ],
         },
@@ -694,12 +725,53 @@ module.exports = {
               sequelize.literal(
                 "(SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id)",
               ),
-              "taskCount",
+              "tasksCount",
+            ],
+            [
+              sequelize.literal(
+                `
+                (SELECT COUNT(tasks.id) FROM tasks WHERE tasks.projectId = Project.id AND tasks.statusId = 
+                (SELECT MAX(statuses.id) FROM statuses WHERE statuses.projectId = Project.id))
+                `,
+              ),
+              "completedTasks",
+            ],
+            [
+              sequelize.literal(
+                `
+                (
+                  SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT('id', users.id, 'email', users.email, 'username', users.username)
+                  )
+                  FROM users
+                  WHERE users.id IN (
+                    SELECT members.userId
+                    FROM members
+                    WHERE members.projectId = Project.id 
+                    AND members.status != 'Pending'  
+                  )
+                )
+                `,
+              ),
+              "contributors",
             ],
           ],
           exclude: ["statusId"],
         },
       });
+
+      // Calculate the current task progress of each project
+      if (projects.rows.length > 0) {
+        const projectPromises = await projects.rows.map((project) => {
+          const defaultValues = project.toJSON();
+          return {
+            ...defaultValues,
+            currentProgress:
+              (defaultValues.completedTasks / defaultValues.tasksCount) * 100,
+          };
+        });
+        projects.rows = await Promise.all(projectPromises);
+      }
 
       return projects;
     } catch (error) {
@@ -737,94 +809,13 @@ module.exports = {
             attributes: ["id", "name"],
           },
         ],
-        attributes: ["id", "createdAt", "updatedAt"],
+        attributes: ["id", "status", "createdAt", "updatedAt"],
       });
 
       // Return the object with count and rows of project members
       return members;
     } catch (error) {
       // If an error occurs, throw the error
-      throw error;
-    }
-  },
-
-  /**
-   * Creates a new notification in the database.
-   * @param {Object} options - Object containing message, broadcastId, and createdBy.
-   * @returns {Promise<Object>} - A promise resolving to the created notification.
-   * @throws {Error} - Throws an error if the creation fails.
-   */
-  createNotification: async ({ message, broadcastId, createdBy }) => {
-    try {
-      // Use Sequelize's create method to add a new notification to the database
-      const notification = await Notification.create({
-        message,
-        broadcastId,
-        readers: [createdBy], // Initialize readers array with createdBy user ID
-      });
-
-      // Return the created notification
-      return notification;
-    } catch (error) {
-      // If an error occurs during the creation process, throw the error
-      throw error;
-    }
-  },
-
-  /**
-   * Updates the readers of specified notifications by appending a new user ID.
-   * @param {Object} options - Object containing notificationIds and userId.
-   * @returns {Promise<Array>} - A promise resolving to an array of updated notifications.
-   * @throws {Error} - Throws an error if the update fails.
-   */
-  updateNotification: async ({ notificationIds, userId }) => {
-    try {
-      // Use Sequelize's update method to modify the readers of specified notifications
-      const updatedNotifications = await Notification.update(
-        {
-          readers: sequelize.literal(
-            `JSON_ARRAY_APPEND(readers, '$', ${userId})`,
-          ),
-        },
-        {
-          where: {
-            id: notificationIds,
-          },
-        },
-      );
-
-      // Return the array of updated notifications
-      return updatedNotifications;
-    } catch (error) {
-      // If an error occurs during the update process, throw the error
-      throw error;
-    }
-  },
-
-  /**
-   * Deletes notifications that were created more than 15 days ago.
-   * @returns {Promise<number>} - A promise resolving to the number of deleted notifications.
-   * @throws {Error} - Throws an error if the deletion fails.
-   */
-  deleteOldNotifications: async () => {
-    try {
-      // Calculate the date 15 days ago from the current time
-      const fifteenDaysAgo = new Date(new Date() - 15 * 24 * 60 * 60 * 1000);
-
-      // Use Sequelize's destroy method to delete notifications older than 15 days
-      const deletedNotificationCount = await Notification.destroy({
-        where: {
-          createdAt: {
-            [Op.lte]: fifteenDaysAgo,
-          },
-        },
-        force: true, // Use force: true to perform a hard delete
-      });
-
-      // Return the number of deleted notifications
-      return deletedNotificationCount;
-    } catch (error) {
-      // If an error occurs during the deletion process, throw the error
       throw error;
     }
   },

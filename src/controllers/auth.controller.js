@@ -10,7 +10,7 @@ const sequelize = require("sequelize");
 
 module.exports = {
   /**
-   * Handles user signup by extracting username and password from the request body.
+   * Handles user signup by extracting username,picture and password from the request body.
    * Uses the authService to create a new user and responds with the result.
    *
    * @param {Object} req - Express request object.
@@ -18,9 +18,15 @@ module.exports = {
    * @returns {Object} - HTTP response with status and message.
    */
   doSignUp: async (req, res, next) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, picture } = req.body;
     // Call authService to create a new user
-    const user = await authService.doSignUp({ username, email, password });
+    const user = await authService.doSignUp({
+      username,
+      email,
+      password,
+      picture,
+    });
+
     if (!user) {
       return next({
         message: "Registration failed due to invalid input",
@@ -45,12 +51,13 @@ module.exports = {
       id: user.id,
       username,
       email,
+      picture,
       accessToken,
       refreshToken,
     };
 
     // Respond with a success message and the created user
-    return res.status(201).json({
+    return res.status(httpStatusCode.CREATED).json({
       success: true,
       message: "Registration successful",
       data: authDetails,
@@ -119,11 +126,77 @@ module.exports = {
       username: user.username,
       email: user.email,
       accessToken,
+      picture: user?.picture,
       refreshToken,
     };
 
     // User is authenticated, respond with success message and user details
-    return res.status(200).json({
+    return res.status(httpStatusCode.OK).json({
+      success: true,
+      message: "Login successful",
+      data: authDetails,
+    });
+  },
+
+  /**
+   * Handles user google-sign-in by extracting email and picture from the request body.
+   * Uses the authService to find the user, validate the password, and generate an access token.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Object} - HTTP response with status, message, and user details.
+   */
+  doGoogleSignIn: async (req, res) => {
+    const { email, picture } = req.body;
+
+    // Find the user by email
+    const user = await authService.doSignIn({
+      usernameOrEmail: email,
+    });
+
+    // If user not found, respond with a 404 status
+    if (!user) {
+      throw new sequelize.ValidationError(
+        "User not found. Please register if you are a new user.",
+        [
+          {
+            path: "usernameOrEmail",
+            message: "Username not found.",
+          },
+        ],
+      );
+    }
+
+    // Generate an access token and refresh token for the authenticated user
+    const [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
+      generateRefreshToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
+    ]);
+
+    if (picture) {
+      user.picture = picture;
+      user.save();
+    }
+
+    const authDetails = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      picture,
+      accessToken,
+      refreshToken,
+    };
+
+    // User is authenticated, respond with success message and user details
+    return res.status(httpStatusCode.OK).json({
       success: true,
       message: "Login successful",
       data: authDetails,

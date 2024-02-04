@@ -7,9 +7,9 @@ const {
   User,
   Project,
   Permission,
-  Notification,
-  sequelize,
+  // sequelize,
 } = require("../models/sequelize.model");
+
 module.exports = {
   /**
    * Retrieves a list of tracker from the database.
@@ -53,15 +53,37 @@ module.exports = {
   /**
    * Retrieve all permissions.
    *
+   * @param {Object} options - An object containing options for retrieving permissions.
+   * @param {number} options.projectId - The ID of the project for which permissions are being retrieved.
    * @returns {Promise<Array>} A promise that resolves with an array containing permission details.
    * @throws Will throw an error if there's an issue with the operation.
    */
-  getPermissions: async () => {
+  getPermissions: async ({ projectId }) => {
     try {
-      return await Permission.findAll({
+      // Retrieve all permissions
+      let permissions = await Permission.findAll({
         attributes: ["id", "name"],
       });
+
+      // If projectId is provided, filter out Super Admin permission
+      if (projectId) {
+        // Find Super Admin member for the project
+        const superAdmin = await Member.findOne({
+          where: { projectId, status: "Super Admin" },
+          attributes: ["permissionId"],
+        });
+
+        // Filter out Super Admin permission if it exists
+        if (superAdmin) {
+          permissions = await permissions.filter((permission) => {
+            return superAdmin.permissionId !== permission.id;
+          });
+        }
+      }
+
+      return permissions;
     } catch (error) {
+      // Throw error if there's an issue with the operation
       throw error;
     }
   },
@@ -79,6 +101,7 @@ module.exports = {
       const teams = await Member.findAll({
         where: {
           userId,
+          status: "Member",
         },
         include: [
           {
@@ -130,6 +153,9 @@ module.exports = {
       const members = await Member.findAll({
         where: {
           projectId,
+          status: {
+            [Op.not]: "Pending",
+          },
         },
         include: [
           {
@@ -202,7 +228,7 @@ module.exports = {
    * @returns {Promise<Object>} - A promise resolving to an object with user data.
    * @throws {Error} - Throws an error if the operation fails.
    */
-  getUsers: async ({ offset, limit, searchKey }) => {
+  getUsers: async ({ offset, limit, searchKey, projectId }) => {
     try {
       // Construct a WHERE clause based on the searchKey, if provided
       const whereClause = searchKey
@@ -222,39 +248,18 @@ module.exports = {
         where: whereClause,
       });
 
+      if (projectId) {
+        const membersIds = await Member.findAll({
+          where: { projectId, status: { [Op.not]: "Pending" } },
+          attributes: ["userId"],
+        });
+        usersData.rows = await usersData.rows.filter((user) => {
+          return !membersIds.some((ids) => ids.userId === user.id);
+        });
+      }
+
       // Return the result, including the count and user data
       return usersData;
-    } catch (error) {
-      // If an error occurs, throw the error
-      throw error;
-    }
-  },
-
-  /**
-   * Retrieves notifications based on roomIds and userId, with optional pagination.
-   * @param {Object} options - Object containing roomIds, userId, offset, and limit.
-   * @returns {Promise<Object>} - A promise resolving to an object with notification data and count.
-   * @throws {Error} - Throws an error if the operation fails.
-   */
-  getNotifications: async ({ roomIds, userId, offset, limit }) => {
-    try {
-      // Use Sequelize's findAndCountAll to get paginated notification data
-      const notificationsData = await Notification.findAndCountAll({
-        offset,
-        limit,
-        where: {
-          // Construct a WHERE clause based on roomIds and userId
-          broadcastId: [...roomIds, userId],
-          readers: sequelize.literal(`NOT JSON_CONTAINS(readers, '${userId}')`),
-        },
-        order: [["createdAt", "DESC"]],
-        replacements: {
-          roomIds,
-        },
-      });
-
-      // Return the result, including the count and notification data
-      return notificationsData;
     } catch (error) {
       // If an error occurs, throw the error
       throw error;
@@ -285,30 +290,6 @@ module.exports = {
 
       // If the result is not an array, throw an error indicating the user is not enrolled in any project
       throw new Error("User currently not enrolled in any project");
-    } catch (error) {
-      // If an error occurs, throw the error
-      throw error;
-    }
-  },
-
-  /**
-   * Retrieves the count of unread notifications for a user in specified rooms.
-   * @param {Object} options - Object containing roomIds and userId.
-   * @returns {Promise<number>} - A promise resolving to the count of unread notifications.
-   * @throws {Error} - Throws an error if an operation fails.
-   */
-  getNotificationCount: async ({ roomIds, userId }) => {
-    try {
-      // Use Sequelize's count to get the number of unread notifications
-      const notificationCount = await Notification.count({
-        where: {
-          broadcastId: roomIds,
-          readers: sequelize.literal(`NOT JSON_CONTAINS(readers, '${userId}')`),
-        },
-      });
-
-      // Return the count of unread notifications
-      return notificationCount;
     } catch (error) {
       // If an error occurs, throw the error
       throw error;

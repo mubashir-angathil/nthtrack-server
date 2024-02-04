@@ -1,7 +1,6 @@
 const dataService = require("../services/data.service");
 const projectService = require("../services/project.service");
 const { httpStatusCode } = require("../utils/constants/Constants");
-const helpers = require("../utils/helpers/helpers");
 const { getCurrentPagination } = require("../utils/helpers/helpers");
 
 module.exports = {
@@ -161,8 +160,12 @@ module.exports = {
    * @returns {Promise<void>} A promise that resolves once the response is sent.
    */
   getPermissions: async (req, res, next) => {
+    const projectId = req.params?.projectId
+      ? parseInt(req.params.projectId)
+      : undefined;
+
     // Retrieve permissions from the data service
-    const permissions = await dataService.getPermissions();
+    const permissions = await dataService.getPermissions({ projectId });
 
     // Check if the retrieval was successful
     if (permissions) {
@@ -184,7 +187,7 @@ module.exports = {
    */
   getUsers: async (req, res, next) => {
     // Extract parameters from the request body
-    const { limit, page, searchKey } = req.body;
+    const { limit, page, searchKey, projectId } = req.body;
 
     // Calculate pagination based on provided limit and page
     const pagination = getCurrentPagination({ page, limit });
@@ -194,6 +197,7 @@ module.exports = {
       limit: pagination.limit,
       offset: pagination.offset,
       searchKey,
+      projectId,
     });
 
     // Check if users were successfully retrieved
@@ -209,43 +213,6 @@ module.exports = {
 
     // If retrieval fails, call the next middleware with an error message
     return next({ message: "Failed to retrieve users." });
-  },
-
-  /**
-   * Retrieves notifications based on roomIds, user ID, pagination parameters.
-   * @param {Object} req - Express request object.
-   * @param {Object} res - Express response object.
-   * @param {Function} next - Express next middleware function.
-   * @returns {Promise<void>} - Asynchronous function.
-   */
-  getNotifications: async (req, res, next) => {
-    // Extract parameters from the query string
-    const { roomIds, page, limit } = req.query;
-
-    // Calculate pagination based on provided page and limit
-    const pagination = await helpers.getCurrentPagination({ page, limit });
-
-    // Retrieve notifications based on parameters
-    const notifications = await dataService.getNotifications({
-      roomIds: roomIds.split(","), // Assuming roomIds are comma-separated values
-      userId: req.user.id, // Assuming user ID is stored in req.user
-      offset: pagination.offset,
-      limit: pagination.limit,
-    });
-
-    // Check if notifications were successfully retrieved
-    if (!notifications) {
-      // If notifications are empty, throw an error to be handled by the error middleware
-      throw next({ message: "Notifications are empty." });
-    }
-
-    // Send a success response with notification data and pagination information
-    return res.status(httpStatusCode.OK).json({
-      success: true,
-      message: "Notifications retrieved successfully.",
-      data: notifications.rows,
-      totalRows: notifications.count,
-    });
   },
 
   /**

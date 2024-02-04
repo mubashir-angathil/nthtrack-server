@@ -45,7 +45,7 @@ router.get("/teams", verifyToken, tryCatch(dataController.getMemberTeams));
  * GET /api/permissions
  */
 router.get(
-  "/permissions",
+  "/project/:projectId/permissions",
   verifyToken,
   tryCatch(dataController.getPermissions),
 );
@@ -69,16 +69,6 @@ router.get(
   verifyToken,
   validatePermission("project.member.all"),
   tryCatch(dataController.getTaskAssignees),
-);
-
-/**
- * Route for retrieving user notifications. Requires a valid token for authentication.
- * GET /api/user/notifications
- */
-router.get(
-  "/user/notifications",
-  verifyToken,
-  tryCatch(dataController.getNotifications),
 );
 
 /**
