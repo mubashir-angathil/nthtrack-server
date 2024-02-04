@@ -1,6 +1,9 @@
-# Issue Tracker Server
-
-Welcome to the Issue Tracker Server! This tool helps you manage and keep track of tasks, bugs, and feature requests for your projects.
+<h1>
+    Nth Track (Server)
+    <img src="https://github.com/mubashir-angathil/nthtrack-client/blob/master/public/vite.png" height="40px" alt="Movie Trends Logo"/>
+ 
+</h1>
+Welcome to "Nth Track" – an advanced project management system designed to streamline the process of handling permission-based requests for your projects. This comprehensive README guide aims to assist you in seamlessly initiating the project, providing crucial insights for both developers and users.
 
 ## Table of Contents
 - [Getting Started](#getting-started)
@@ -14,14 +17,16 @@ Welcome to the Issue Tracker Server! This tool helps you manage and keep track o
 ## Getting Started
 
 ### Prerequisites
-- Node.js and npm installed
-- MySQL database configured
+Before running the server, ensure you have the following dependencies installed:
+- Node.js: [Download Node.js](https://nodejs.org/)
+- MySQL Server: [Download MySQL Server](https://dev.mysql.com/downloads/mysql/)
+
 
 ### Installation
 
 #### Clone the Repository
 ```bash
-git clone https://github.com/your-username/issue-tracker.git
+git clone https://github.com/your-username/nthtrack-server.git
 cd issue-tracker
 ```
 
